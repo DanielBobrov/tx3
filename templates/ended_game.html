@@ -96,7 +96,7 @@
         board.setState({{ game.grid | safe }}, "{{ game.pgn }}");
         board.setActiveMini(-2);
         moveNavigator = new MoveNavigator(board, null);
-        moveNavigator.setMoves({{ game.state }});
+        moveNavigator.setMoves({{ game.pgn }});
 
         document.getElementById("clockX").textContent = formatTime({{ game.left_time[0]*1000 }});
         document.getElementById("clockO").textContent = formatTime({{ game.left_time[1]*1000 }});
