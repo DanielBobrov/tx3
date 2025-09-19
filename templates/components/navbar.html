@@ -1,0 +1,23 @@
+<header class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">{{ site_name|default('Кресты-обручи') }}</a>
+    <nav class="nav-links">
+{#      <a href="/">Играть</a>#}
+{#      <a href="#">Задачи</a>#}
+{#      <a href="#">Обучение</a>#}
+{#      <a href="#">Наблюдать</a>#}
+{#      <a href="#">Сообщество</a>#}
+    </nav>
+    <div class="nav-actions">
+{#      <input type="search" class="search" placeholder="Поиск игрока или партии" />#}
+      {% if player and player.username != None %}
+{#        <a href="/profile" class="btn small">Профиль</a>#}
+          <p>{{ player.username }}</p>
+        <a href="/logout" class="btn small ghost">Выйти</a>
+      {% else %}
+        <a href="/login" class="btn small">Войти</a>
+        <a href="/signup" class="btn small ghost">Регистрация</a>
+      {% endif %}
+    </div>
+  </div>
+</header>

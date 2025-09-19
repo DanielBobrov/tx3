@@ -1,0 +1,136 @@
+<a href="#" onclick="openModal(event)" class="btn">Создать игру</a>
+
+<!-- Модальное окно создания игры -->
+<div id="createGameModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Создать игру</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+
+        <form id="createGameForm" autocomplete="off">
+            <!-- Переключатель режима игры -->
+            <div class="form-group">
+                <label class="switch-label">Игра на время
+
+                    <input type="checkbox" id="useTimer" class="switch-input" checked=""
+                           onchange="toggleTimerSettings()">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+
+            <!-- Настройки времени (показываются только когда включен таймер) -->
+            <div id="timerSettings" class="form-group timer-settings">
+                <label for="gameDuration">Длительность партии (минуты):
+                    <span class="gameDurationValue">3</span>
+                </label>
+                <input class="range" type="range" id="gameDuration" min="1" max="15" value="3" oninput="showVal(this)">
+
+                <label for="moveAddition">Добавление за ход (секунды):
+                    <span class="moveAdditionValue">5</span>
+                </label>
+                <input class="range" type="range" id="moveAddition" min="0" max="60" value="5" oninput="showVal(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Выберите фигуру</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="pieceX" name="piece" value="X">
+                        <label for="pieceX">X</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="pieceRandom" name="piece" value="random" checked>
+                        <label for="pieceRandom">Случайно</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="pieceO" name="piece" value="O">
+                        <label for="pieceO">O</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn ghost" onclick="closeModal()">Отмена</button>
+                <button type="submit" class="btn primary">Создать игру</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Стили для переключателя */
+.switch-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.switch-input {
+    display: none;
+}
+
+.switch-slider {
+    display: block;
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: background-color 0.3s;
+    margin-right: 12px;
+    margin-top: .5em;
+}
+
+.switch-slider::before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+.switch-input:checked + .switch-slider {
+    background-color: #4CAF50;
+}
+
+.switch-input:checked + .switch-slider::before {
+    transform: translateX(24px);
+}
+
+.switch-text {
+    font-size: 16px;
+    color: #333;
+}
+
+/* Стили для настроек времени */
+.timer-settings {
+    max-height: 200px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    opacity: 1;
+}
+
+.timer-settings.hidden {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.timer-settings label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.timer-settings .range {
+    margin-bottom: 16px;
+}
+</style>
+
+<script src="/static/js/create_game.js"></script>

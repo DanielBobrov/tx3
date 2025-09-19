@@ -1,0 +1,8 @@
+{% macro render_player_button(player, players) -%}
+    {% if player %}{% set player_username = players[player].username %}{% endif %}
+    <div class="btn">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
+{%- endmacro %}
+{% macro render_player_username(player, players) -%}
+    {% if player %}{% set player_username = players[player].username %}{% endif %}
+    <div class="username">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
+{%- endmacro %}

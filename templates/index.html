@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "components/user_button.html" import render_player_button %}
+{% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в кресты-обручи онлайн{% endblock %}
+{% block content %}
+    <section class="hero">
+        <div class="hero-left">
+            <h1>Играть в кресты-обручи онлайн</h1>
+            {#    <p class="muted">Мгновенные партии, режимы, рейтинги и наблюдение за матчами в реальном времени.</p>#}
+            <div class="cta-row">
+                {#      <a href="/quickplay" class="btn primary">Играть с соперником</a>#}
+                {% include "components/create_game.html" %}
+                {#      <a href="/vs-bot" class="btn ghost">Против компьютера</a>#}
+            </div>
+        </div>
+        {#  <div class="hero-right">#}
+        {#    <!-- Место под мини-виджеты, баннеры, новости -->#}
+        {#    <div class="panel">#}
+        {#      <h3>Пазл дня</h3>#}
+        {#      <div class="muted">Сервер подставит FEN и решение</div>#}
+        {#      <div class="puzzle-fen">{{ puzzle.fen if puzzle else '...' }}</div>#}
+        {#      <a href="/puzzles/daily" class="btn small">Решить</a>#}
+        {#    </div>#}
+        {#  </div>#}
+    </section>
+
+    <section class="grid two">
+        <div class="panel">
+            <div class="panel-head">
+                <h3>Последние игры</h3>
+                <a class="link" href="/all_games">Все игры</a>
+            </div>
+            <div class="table">
+                <div class="tr th">
+                    <div style="text-align: center">Победитель</div>
+                    <div style="text-align: center">Играл за X</div>
+                    <div style="text-align: center">Играл за O</div>
+                    <div style="text-align: center">Статус</div>
+                </div>
+                {% for game in last_games or [] %}
+                    <a href="/game/{{ game.game_id }}" class="tr btn ghost">
+                        {{ render_player_button(game.players[game.winner], players) }}
+                        {{ render_player_button(game.players[0], players) }}
+                        {{ render_player_button(game.players[1], players) }}
+                        <div style="text-align: center">{{ game.status }}</div>
+                    </a>
+                {% else %}
+                    <div class="tr empty">
+                        <div class="muted">Нет последних игр. Создайте первую!</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {#  <div class="panel">#}
+        {#    <div class="panel-head">#}
+        {#      <h3>Живые партии</h3>#}
+        {#      <a class="link" href="/watch">Смотреть все</a>#}
+        {#    </div>#}
+        {#    <div class="live-list">#}
+        {#      {% for g in live_games or [] %}#}
+        {#        <a class="live-item" href="/game/{{ g.id }}">#}
+        {#          <div class="players">#}
+        {#            <span>{{ g.white.username }} ({{ g.white.rating }})</span>#}
+        {#            <span class="muted">vs</span>#}
+        {#            <span>{{ g.black.username }} ({{ g.black.rating }})</span>#}
+        {#          </div>#}
+        {#          <div class="muted">{{ g.time }}+{{ g.increment }} • {{ g.status|default('Идёт') }}</div>#}
+        {#        </a>#}
+        {#      {% else %}#}
+        {#        <div class="muted">Пока пусто. Станьте первым!</div>#}
+        {#      {% endfor %}#}
+        {#    </div>#}
+        {#  </div>#}
+    </section>
+{% endblock %}
+{% block scripts %}
+{% endblock %}

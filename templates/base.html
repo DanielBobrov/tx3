@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}{{ site_name|default('Кресты-обручи') }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="theme-dark">
+  {% include "components/navbar.html" %}
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>© {{ current_year|default(2025) }} {{ site_name|default('Кресты-обручи') }}</div>
+{#      <div class="muted">UI вдохновлён онлайн‑шахматами. Без логотипов/бренда.</div>#}
+    </div>
+  </footer>
+
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

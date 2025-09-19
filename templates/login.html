@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Вход / Регистрация - {{ super() }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  .auth-container {
+    max-width: 400px;
+    margin: 60px auto;
+  }
+  
+  .auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  
+  .auth-tabs .tab {
+    flex: 1;
+    padding: 12px;
+    background: var(--panel);
+    border: 1px solid #2a241c;
+    color: var(--muted);
+    text-align: center;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s;
+  }
+  
+  .auth-tabs .tab.active {
+    background: var(--accent);
+    color: #100d0a;
+    border-color: var(--accent);
+  }
+  
+  .auth-form {
+    background: var(--panel);
+    border: 1px solid #2a241c;
+    border-radius: 0 0 12px 12px;
+    padding: 24px;
+  }
+  
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0e0c09;
+    color: var(--text);
+    border: 1px solid #2a241c;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  
+  .form-input.error {
+    border-color: var(--danger);
+  }
+  
+  .error-message {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    color: var(--danger);
+    font-size: 14px;
+  }
+  
+  .error-message.show {
+    display: block;
+  }
+  
+  .success-message {
+    display: none;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 6px;
+    color: #22c55e;
+    font-size: 14px;
+  }
+  
+  .success-message.show {
+    display: block;
+  }
+  
+  .form-submit {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  
+  .form-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #2a241c;
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  
+  .form-footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  
+  .form-footer a:hover {
+    text-decoration: underline;
+  }
+  
+  .loading {
+    display: none !important;
+  }
+  
+  .loading.show {
+    display: inline-block !important;
+  }
+  
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #100d0a;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+    margin-left: 8px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-tabs">
+    <div class="tab active" data-tab="login">Вход</div>
+    <div class="tab" data-tab="register">Регистрация</div>
+  </div>
+  
+  <div class="auth-form">
+    <!-- Сообщение об успехе -->
+    <div id="successMessage" class="success-message"></div>
+    
+    <!-- Форма входа -->
+    <form id="loginForm" class="auth-form-content">
+      <div class="form-group">
+        <label class="form-label" for="loginUsername">Имя пользователя</label>
+        <input 
+          type="text" 
+          id="loginUsername" 
+          name="username" 
+          class="form-input" 
+          required
+          autocomplete="username"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="loginPassword">Пароль</label>
+        <input 
+          type="password" 
+          id="loginPassword" 
+          name="password" 
+          class="form-input" 
+          required
+          autocomplete="current-password"
+        >
+      </div>
+      
+      <div id="loginError" class="error-message"></div>
+      
+      <button type="submit" class="btn primary form-submit">
+        <span>Войти</span>
+        <span class="loading spinner"></span>
+      </button>
+      
+      <div class="form-footer">
+        Нет аккаунта? <a href="#" onclick="switchTab('register'); return false;">Зарегистрируйтесь</a>
+      </div>
+    </form>
+    
+    <!-- Форма регистрации -->
+    <form id="registerForm" class="auth-form-content" style="display: none;">
+      <div class="form-group">
+        <label class="form-label" for="registerUsername">Имя пользователя</label>
+        <input 
+          type="text" 
+          id="registerUsername" 
+          name="username" 
+          class="form-input" 
+          required
+          autocomplete="username"
+          minlength="3"
+          maxlength="20"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="registerPassword">Пароль</label>
+        <input 
+          type="password" 
+          id="registerPassword" 
+          name="password" 
+          class="form-input" 
+          required
+          autocomplete="new-password"
+          minlength="6"
+        >
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="registerPasswordConfirm">Подтвердите пароль</label>
+        <input 
+          type="password" 
+          id="registerPasswordConfirm" 
+          name="passwordConfirm" 
+          class="form-input" 
+          required
+          autocomplete="new-password"
+        >
+      </div>
+      
+      <div id="registerError" class="error-message"></div>
+      
+      <button type="submit" class="btn primary form-submit">
+        <span>Зарегистрироваться</span>
+        <span class="loading spinner"></span>
+      </button>
+      
+      <div class="form-footer">
+        Уже есть аккаунт? <a href="#" onclick="switchTab('login'); return false;">Войдите</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Переключение вкладок
+  function switchTab(tabName) {
+    // Обновляем активную вкладку
+    document.querySelectorAll('.auth-tabs .tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Показываем нужную форму
+    document.getElementById('loginForm').style.display = tabName === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tabName === 'register' ? 'block' : 'none';
+    
+    // Очищаем ошибки
+    clearErrors();
+  }
+  
+  // Обработчики клика по вкладкам
+  document.querySelectorAll('.auth-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+  
+  // Очистка ошибок
+  function clearErrors() {
+    document.querySelectorAll('.error-message').forEach(el => {
+      el.classList.remove('show');
+      el.textContent = '';
+    });
+    document.querySelectorAll('.form-input').forEach(el => {
+      el.classList.remove('error');
+    });
+    document.getElementById('successMessage').classList.remove('show');
+  }
+  
+  // Показ ошибки
+  function showError(formId, message) {
+    const errorEl = document.getElementById(formId + 'Error');
+    errorEl.textContent = message;
+    errorEl.classList.add('show');
+  }
+  
+  // Показ успеха
+  function showSuccess(message) {
+    const successEl = document.getElementById('successMessage');
+    successEl.textContent = message;
+    successEl.classList.add('show');
+  }
+  
+  // Показ/скрытие загрузки
+  function setLoading(button, loading) {
+    const spinner = button.querySelector('.spinner');
+    const text = button.querySelector('span:first-child');
+    
+    if (loading) {
+      spinner.classList.add('show');
+      button.disabled = true;
+    } else {
+      spinner.classList.remove('show');
+      button.disabled = false;
+    }
+  }
+  
+  // Обработка формы входа
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+
+    setLoading(submitBtn, true);
+    
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.get('username'),
+          password: formData.get('password')
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Успешный вход
+        window.location.href = data.redirect || '/';
+      } else {
+        // Ошибка входа
+        if (data.error === 'invalid_credentials') {
+          showError('login', 'Неверное имя пользователя или пароль');
+        } else {
+          showError('login', data.message || 'Ошибка при входе');
+        }
+      }
+    } catch (error) {
+      showError('login', 'Ошибка сети. Попробуйте позже');
+    } finally {
+      setLoading(submitBtn, false);
+    }
+  });
+  
+  // Обработка формы регистрации
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+    
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+    
+    // Проверка паролей
+    const password = formData.get('password');
+    const passwordConfirm = formData.get('passwordConfirm');
+    
+    if (password !== passwordConfirm) {
+      showError('register', 'Пароли не совпадают');
+      document.getElementById('registerPasswordConfirm').classList.add('error');
+      return;
+    }
+    
+    setLoading(submitBtn, true);
+    
+    try {
+      const response = await fetch('/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.get('username'),
+          password: password
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Успешная регистрация
+        showSuccess('Регистрация успешна! Теперь вы можете войти');
+        form.reset();
+        setTimeout(() => switchTab('login'), 1500);
+      } else {
+        // Ошибка регистрации
+        if (data.error === 'username_taken') {
+          showError('register', 'Это имя пользователя уже занято');
+          document.getElementById('registerUsername').classList.add('error');
+        } else if (data.error === 'weak_password') {
+          showError('register', 'Пароль слишком слабый');
+          document.getElementById('registerPassword').classList.add('error');
+        } else {
+          showError('register', data.message || 'Ошибка при регистрации');
+        }
+      }
+    } catch (error) {
+      showError('register', 'Ошибка сети. Попробуйте позже');
+    } finally {
+      setLoading(submitBtn, false);
+    }
+  });
+  
+  // Очистка ошибок при изменении полей
+  document.querySelectorAll('.form-input').forEach(input => {
+    input.addEventListener('input', () => {
+      input.classList.remove('error');
+    });
+  });
+  {{ "switchTab('register')"|safe if registration else "" }}
+</script>
+{% endblock %}

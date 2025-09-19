@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "components/ttt_board.html" import render_ttt_board %}
+{% from "components/user_button.html" import render_player_username %}
+{% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/game.css">
+    <section class="game-layout">
+        <div class="board-col">
+            <div class="player top">
+                <div class="user">
+                    {{ render_player_username(game.players[0], players) }}
+                    {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
+                </div>
+                <div class="clock" id="clockX">{{ "%.2f"|format((o_time_ms or 300000)/60000) }}'</div>
+            </div>
+
+            <div class="board-wrap">
+                {{ render_ttt_board('tttBoard') }}
+            </div>
+
+            <div class="player bottom">
+                <div class="user">
+                    {{ render_player_username(game.players[1], players) }}
+                    {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
+                </div>
+                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>
+            </div>
+
+            {#    <div class="game-controls">#}
+            {#      <button class="btn" id="btnOfferDraw">Предложить ничью</button>#}
+            {#      <button class="btn ghost" id="btnResign">Сдаться</button>#}
+            {#      <button class="btn" id="btnRematch">Реванш</button>#}
+            {#    </div>#}
+        </div>
+
+        <aside class="side-col">
+    <div class="panel moves">
+        <div class="panel-head">
+            <h3>Ходы</h3>
+            <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
+        </div>
+        <div class="moves-list" id="movesList"></div>
+        <div class="moves-nav">
+            <button id="navFirst" title="В начало">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
+                </svg>
+            </button>
+            <button id="navPrev" title="Предыдущий ход">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+                </svg>
+            </button>
+            <button id="navNext" title="Следующий ход">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
+                </svg>
+            </button>
+            <button id="navLast" title="В конец">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="viewing-indicator" id="viewingIndicator">
+            Просмотр хода <span id="viewingMoveNum"></span>
+        </div>
+    </div>
+</aside>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        None = null;
+        window.INIT = {
+            gameId: "{{ game.game_id if game else '' }}",
+            // 81 символ ('.', 'X', 'O'), либо сервер подставит свое
+            initialGrid: {{ game.grid | safe }},
+            // Активный мини‑квадрат (0..8) или -1 если можно ходить в любой
+            activeMini: {{ -1 }},
+            {#me: {{ player if player else 'null' }}#}
+            shit: "{{ game }}",
+        };
+    </script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/ttt_board.js"></script>
+    <script src="/static/js/timer.js"></script>
+    <script src="/static/js/moves_history.js"></script>
+    {#    <script src="/static/js/ttt_game.js"></script>#}
+    <script>
+        const board = new TTTBoard('#tttBoard', {
+            activeMini: -1,
+        });
+        board.setState({{ game.grid | safe }}, "{{ game.pgn }}");
+        board.setActiveMini(-2);
+        moveNavigator = new MoveNavigator(board, null);
+        moveNavigator.setMoves({{ game.state }});
+
+        document.getElementById("clockX").textContent = formatTime({{ game.left_time[0]*1000 }});
+        document.getElementById("clockO").textContent = formatTime({{ game.left_time[1]*1000 }});
+
+        function swapPlayers() {
+            let player1 = document.querySelector(".player.top");
+            let player2 = document.querySelector(".player.bottom");
+
+            let h1 = player1.innerHTML;
+            let h2 = player2.innerHTML;
+
+            player1.innerHTML = h2;
+            player2.innerHTML = h1;
+        }
+    </script>
+{% endblock %}

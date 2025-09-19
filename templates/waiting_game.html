@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "components/ttt_board.html" import render_ttt_board %}
+{% from "components/user_button.html" import render_player_button %}
+{% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
+
+{% block content %}
+    <section class="game-layout">
+        <div class="board-col">
+            <div class="player top">
+                <div class="user">
+                    {{ render_player_button(game.players[0], players) }}
+                    {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
+                </div>
+                <div class="clock" id="clockO">{{ "%.2f"|format((o_time_ms or 300000)/60000) }}'</div>
+            </div>
+
+            <div class="board-wrap">
+                {{ render_ttt_board('tttBoard') }}
+            </div>
+
+            <div class="player bottom">
+                <div class="user">
+                    {{ render_player_button(game.players[1], players) }}
+                    {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
+                </div>
+                <div class="clock" id="clockX">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>
+            </div>
+
+            {#    <div class="game-controls">#}
+            {#      <button class="btn" id="btnOfferDraw">Предложить ничью</button>#}
+            {#      <button class="btn ghost" id="btnResign">Сдаться</button>#}
+            {#      <button class="btn" id="btnRematch">Реванш</button>#}
+            {#    </div>#}
+        </div>
+
+        <aside class="side-col">
+            <div class="panel moves">
+                <div class="panel-head">
+                    <h3>Ходы</h3>
+                    <div class="muted" id="gameStatus">Ожидание начала игры</div>
+                </div>
+                <ol class="moves-list" id="movesList"></ol>
+            </div>
+
+            {#    <div class="panel chat">#}
+            {#      <div class="panel-head"><h3>Чат</h3></div>#}
+            {#      <div class="chat-log" id="chatLog"></div>#}
+            {#      <div class="chat-input">#}
+            {#        <input type="text" id="chatMsg" placeholder="Сообщение...">#}
+            {#        <button class="btn small" id="chatSend">Отправить</button>#}
+            {#      </div>#}
+            {#    </div>#}
+        </aside>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        window.INIT = {
+            gameId: {{ game.game_id }}
+        };
+    </script>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script src="{{ url_for('static', filename='js/waiting_room.js') }}"></script>
+{% endblock %}

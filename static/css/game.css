@@ -1,0 +1,109 @@
+.time {
+  display: flex;
+}
+
+/*!* Список ходов *!*/
+/*.moves-list {*/
+/*  margin: 0;*/
+/*  padding: 0;*/
+/*  list-style: none;*/
+/*  max-height: 40vh;*/
+/*  overflow-y: auto;*/
+/*  font-family: monospace;*/
+/*}*/
+
+.move-pair {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.move-number {
+  color: var(--muted);
+  font-size: 13px;
+  min-width: 24px;
+  margin-right: 8px;
+}
+
+.move-item {
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s;
+  width: calc(50% - 16px);
+}
+
+.move-item:hover {
+  background: #2a231b;
+}
+
+.move-item.current {
+  background: #2a231b;
+  font-weight: 600;
+}
+
+.move-item.empty {
+  cursor: default;
+  opacity: 0;
+}
+
+/* Навигация по ходам */
+.moves-nav {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-top: 1px solid #2a241c;
+  justify-content: center;
+}
+
+.moves-nav button {
+  background: #2a231b;
+  color: var(--text);
+  border: 1px solid #3a3127;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+  /*height: 24px;*/
+  /*width: 24px;*/
+}
+
+.moves-nav button:hover:not(:disabled) {
+  border-color: #4a3f32;
+  background: #3a3127;
+}
+
+.moves-nav button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.moves-nav button svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+/* Режим просмотра */
+.board-wrap.viewing-history .square {
+  cursor: not-allowed;
+}
+
+.viewing-indicator {
+  background: #3a3127;
+  color: var(--text);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+  display: none;
+}
+
+.viewing-indicator.show {
+  display: block;
+}

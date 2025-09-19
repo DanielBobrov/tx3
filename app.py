@@ -1,0 +1,334 @@
+import random
+from datetime import datetime, timedelta
+from functools import wraps
+# from threading import Timer
+
+import flask
+from flask import session, redirect, render_template, request
+from flask_socketio import SocketIO, join_room, emit
+
+from database import Database
+from utils import *
+
+app = flask.Flask(__name__)
+app.secret_key = "key"
+app.config["SESSION_VERSION"] = datetime.now().timestamp()
+
+# async_mode="eventlet" важен для работы в асинхронном режиме
+socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
+# logger=True,          # для отладки
+#     engineio_logger=True  # детальные логи
+)
+
+
+@app.before_request
+def check_session_version():
+    if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
+        session.clear()
+        session["version"] = app.config["SESSION_VERSION"]
+
+
+games = Database("games_test.db", "games")
+active_games = games
+timers = {}
+# invites = Database("invites.db", "invites")
+players = PlayersDatabase("players_test.db", "players")
+
+
+def create_game(player_0: int,player_piece: str, use_time: bool = False, duration: int = 0, addition: int = 0, ) -> Game:
+    game_players = [None, None]
+    game_players[player_piece == "O"] = player_0
+    game = Game(
+        game_id=len(games),
+        players=game_players,
+        use_time=use_time,
+        left_time=[duration * 60, duration * 60],
+        addition=addition,
+        last_move_time=-1,
+    )
+    game_id = games.append(game)
+    game.game_id = game_id
+    games[game_id] = game
+    return game
+
+
+def auth_player(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if session.get("player_id") is None:
+            player = Player(None, None)
+            player_id = players.append(player)
+            session["player_id"] = player_id
+            print(f"AUTH NEW PLAYER = {player}")
+        return function(*args, **kwargs)
+
+    return wrapper
+
+
+def desk_is_full(desk):
+    for i in range(3):
+        for j in range(3):
+            if desk[i][j] is None:
+                return False
+    return True
+
+
+def player_wins(desk):
+    lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
+    line_desk = desk[0] + desk[1] + desk[2]
+    for [a, b, c] in lines:
+        if line_desk[a] == line_desk[b] == line_desk[c] is not None:
+            return True
+    return False
+
+
+def make_move(grid, row, col, mark):
+    grid[row][col] = mark
+    desk = [
+        [grid[i][j] for j in range((col // 3) * 3, (col // 3 + 1) * 3)]
+        for i in range((row // 3) * 3, (row // 3 + 1) * 3)
+    ]
+    if player_wins(desk):
+        return grid, True
+    if desk_is_full(desk):
+        for i in range((row // 3) * 3, (row // 3 + 1) * 3):
+            for j in range((col // 3) * 3, (col // 3 + 1) * 3):
+                grid[i][j] = None
+    return grid, False
+
+
+def broadcast_game_state(game_id: int):
+    """Отправляет полное состояние игры всем в комнате."""
+    game = active_games[game_id]
+    # "to" указывает, в какую комнату отправлять событие
+    socketio.emit("update_state", game.get_state_for_client(), to=f"game-{game_id}")
+    # print(f"Broadcasted game state: {game.get_state_for_client()}")
+
+def lose_game(game, loser_mark):
+    game.status = ENDED
+    game.winner = (loser_mark+1)%2
+    # del active_games[game.game_id]
+    if game.use_time:
+        try:
+            timers[game.game_id].cancel()
+        finally:
+            del timers[game.game_id]
+
+    games[game.game_id] = game
+    broadcast_game_state(game.game_id)
+
+
+def lose_by_time(game, player_mark):
+    game.left_time[player_mark] = 0
+    lose_game(game, player_mark)
+
+
+@app.context_processor
+def inject_variables():
+    return dict(players=players, games=games, player_id=session.get("player_id"))
+
+
+@socketio.on("add_time")
+@auth_player
+def on_add_time(data):
+    game_id = data.get("game_id")
+    player_id = data.get("player_id")
+    if player_id != session.get("player_id"):
+        return {"error": 401}
+    if timers.get(game_id) is None:
+        return {"error": 405}
+    timer: ExtendableTimer = timers.get(game_id)
+    timer.extend(15)
+
+
+@socketio.on("join")
+@auth_player
+def on_join(data):
+    """Клиент присоединяется к комнате игры."""
+    game_id = int(data.get("game_id"))
+    game = active_games[game_id]
+    if game is None:
+        return
+    room_name = f"game-{game_id}"
+    join_room(room_name)
+    # Сразу после подключения отправим ему актуальное состояние
+    emit("update_state", game.get_state_for_client())
+
+
+@socketio.on("move")
+@auth_player
+def on_move_fn(data):
+    """Обработка хода, полученного через WebSocket."""
+    game_id, row, col = int(data.get("game_id")), data.get("row"), data.get("col")
+    player = session.get("player_id")
+
+    try:
+        game: Game = active_games[game_id]
+    except:
+        print(f"Game {game_id} has no active game")
+        for game in active_games:
+            print(game)
+        raise
+    if game is None or game.status != ACTIVE or player not in game.players: return
+
+    player_mark = 0 if game.players[0] == player else 1
+    other_player_mark = (player_mark + 1) % 2
+    if game.step != player_mark:
+        # Это не его ход
+        return
+
+    if game.grid[row][col] is not None:
+        # Клетка занята
+        return
+
+    if game.use_time:
+        cur_time = datetime.now()
+
+        timer: ExtendableTimer = timers[game_id]
+        timer.cancel()
+
+        game.left_time[player_mark] -= (cur_time - game.last_move_time).total_seconds()
+        game.last_move_time = cur_time
+
+        if game.left_time[player_mark] <= 0:
+            return lose_game(game, player_mark)
+
+        timers[game_id] = ExtendableTimer(game.left_time[other_player_mark], lose_by_time, [game, other_player_mark])
+        timers[game_id].start()
+
+    grid, wins = make_move(game.grid, row, col, ["X", "O"][player_mark])
+    game.add_step(3 * (row % 3) + (col % 3))
+    game.grid = grid
+    game.left_time[player_mark] += game.time_addition
+
+    if wins:
+        return lose_game(game, other_player_mark)
+
+    games[game_id] = game
+    broadcast_game_state(game_id)
+
+
+@app.route("/")
+@auth_player
+def home():
+    last_games = list(games)[::-1]
+    if len(last_games) > 5:
+        last_games = last_games[:5]
+    return render_template("index.html", last_games=last_games, player=players[session.get("player_id")])
+
+
+@app.route("/all_games")
+@auth_player
+def on_all_games_fn():
+    last_games = games[::-1]
+    return render_template("all_games.html", last_games=last_games, player=players[session.get("player_id")])
+
+
+@app.route("/logout", methods=["GET"])
+@auth_player
+def on_get_logout_fn():
+    session["player_id"] = None
+    return redirect("/")
+
+
+@app.route("/login", methods=["GET"])
+@auth_player
+def on_get_login_fn():
+    return render_template("login.html")
+
+
+@app.route("/login", methods=["POST"])
+@auth_player
+def on_post_login_fn():
+    player = players[request.json.get("username")]
+    if player is None or player.password != request.json.get("password"):
+        return {"error": "invalid_credentials"}, 401
+    print(f"Logged new {player = }")
+    session["player_id"] = player.player_id
+    return "200"
+
+
+@app.route("/signup", methods=["GET"])
+@auth_player
+def on_get_signup_fn():
+    return render_template("login.html", registration=True)
+
+
+@app.route("/signup", methods=["POST"])
+@auth_player
+def on_post_signup_fn():
+    if players[request.json.get("username")] is not None:
+        return {"error": "username_taken"}, 401
+    player = Player(username=request.json.get("username"), password=request.json.get("password"),
+                    player_id=session.get("player_id"))
+    players[session.get("player_id")] = player
+    return "200"
+
+
+@app.route("/create_game", methods=["POST"])
+@auth_player
+def on_create_game_fn():
+    player_id = session.get("player_id")
+    player = players[player_id]
+    game = create_game(
+        player_0=player_id,
+        use_time=request.json.get("use_time"),
+        duration=request.json.get("duration", 0),
+        addition=request.json.get("addition", 0),
+        player_piece=request.json.get("player_piece"),
+    )
+    player.games.append(game)
+    players[player_id] = player
+    return {"game_id": f"{game.game_id}"}
+
+
+@app.route("/game/<int:game_id>", methods=["GET"])
+@auth_player
+def on_game_fn(game_id: int):
+    game: Game = games[game_id]
+    if game is None:
+        return redirect("/")
+    player_id = session["player_id"]
+
+    if game.status == ENDED:
+        return render_template("ended_game.html", game=game, player=players[session.get("player_id")])
+
+    is_player = player_id in game.players
+
+    if game.status == ACTIVE:
+        if is_player:
+            return render_template("active_game.html", game=game, player=players[session.get("player_id")])
+        return render_template("active_game.html", game=game, player=players[session.get("player_id")], specrator=True)
+
+    if game.status == WAITING:
+        # Если это создатель игры, он ждет
+        if is_player:
+            return render_template("waiting_game.html", game=game, player=players[session.get("player_id")])
+
+        # Если это второй игрок, он присоединяется
+        if game.players[0] is None:
+            game.players[0] = player_id
+        else:
+            game.players[1] = player_id
+        player = players[player_id]
+        player.games.append(game_id)
+        players[player_id] = player
+
+        game.status = ACTIVE
+        games[game_id] = game
+        game.last_move_time = datetime.now()
+
+        if game.use_time:
+            timers[game_id] = ExtendableTimer(game.left_time[0], lose_by_time, args=[game, 0])
+            timers[game_id].start()
+
+        active_games[game_id] = game
+        socketio.start_background_task(target=broadcast_game_state, game_id=game_id)
+
+        return redirect(f"/game/{game_id}")
+
+    return redirect(f"/")
+
+
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)

@@ -1,0 +1,25 @@
+{% macro render_ttt_board(board_id='tttBoard') -%}
+<div id="{{ board_id }}" class="ttt-board" data-size="3" data-cell-size="3">
+  {% for mr in range(0,3) %}
+    {% for mc in range(0,3) %}
+      {% set miniIndex = mr * 3 + mc %}
+      <div class="mini" data-mini="{{ miniIndex }}">
+        {% for sr in range(0,3) %}
+          {% for sc in range(0,3) %}
+            {% set row = mr * 3 + sr %}
+            {% set col = mc * 3 + sc %}
+            {% set cellIndex = sr * 3 + sc %}
+            <div class="cell"
+                 data-row="{{ row }}"
+                 data-col="{{ col }}"
+                 data-mini="{{ miniIndex }}"
+                 data-cell="{{ cellIndex }}">
+              <div class="mark"></div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+{%- endmacro %}

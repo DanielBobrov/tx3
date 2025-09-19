@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "components/user_button.html" import render_player_button %}
+{% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в крестики-нолики онлайн{% endblock %}
+{% block content %}
+    <section class="hero">
+        <div class="hero-left">
+            <h1>Играть в крестики-нолики онлайн — бесплатно</h1>
+        </div>
+
+    </section>
+
+    <section class="grid">
+        <div class="panel">
+            <div class="panel-head">
+                <h3>Последние игры</h3>
+            </div>
+            <div class="table">
+                <div class="tr th">
+                    <div>Победитель</div>
+                    <div>Играл за X</div>
+                    <div>Играл за O</div>
+                    <div>Статус</div>
+                    <div></div>
+                </div>
+                {% for game in last_games or [] %}
+                    <a href="/game/{{ game.game_id }}" class="tr btn ghost">
+                        {{ render_player_button(game.players[game.winner], players) }}
+                        {{ render_player_button(game.players[0], players) }}
+                        {{ render_player_button(game.players[1], players) }}
+                        <div style="text-align: center">{{ game.status }}</div>
+                    </a>
+                {% else %}
+                    <div class="tr empty">
+                        <div class="muted">Нет последних игр. Создайте первую!</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+    </section>
+{% endblock %}
+{% block scripts %}
+{% endblock %}
