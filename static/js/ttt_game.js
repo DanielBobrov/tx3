@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let addTimeBtn = document.getElementById("addTimeBtn");
     if (addTimeBtn !== null) addTimeBtn.addEventListener("click", () => {
-        socket.emit("add_time", {game_id: init.gameId, player_id: init.player_id})
+        console.log("ADD TIME", {game_id: init.gameId, player_id: init.me});
+        socket.emit("add_time", {game_id: init.gameId, player_id: init.me})
     });
 
     const board = new TTTBoard('#tttBoard', {
@@ -23,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-    moveNavigator = new MoveNavigator(board, socket);
+    window.board = board;
+    moveNavigator = new MoveNavigator(board);
 
     if (init.initialGrid) board.setState(init.initialGrid, init.initialPgn);
 

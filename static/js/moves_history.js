@@ -1,8 +1,7 @@
 // moves_history.js
 class MoveNavigator {
-    constructor(board, socket) {
+    constructor(board) {
         this.board = board;
-        this.socket = socket;
         this.moves = [];
         this.currentMoveIndex = -1;
         this.isViewingHistory = false;
@@ -17,6 +16,13 @@ class MoveNavigator {
         document.getElementById('navPrev').addEventListener('click', () => this.goToMove(this.currentMoveIndex - 1));
         document.getElementById('navNext').addEventListener('click', () => this.goToMove(this.currentMoveIndex + 1));
         document.getElementById('navLast').addEventListener('click', () => this.goToMove(this.moves.length - 1));
+
+        addEventListener("keydown", (event) => {
+                 if (event.key === "ArrowLeft")  { this.goToMove(this.currentMoveIndex - 1) }
+            else if (event.key === "ArrowRight") { this.goToMove(this.currentMoveIndex + 1) }
+            else if (event.key === "ArrowUp")    { this.goToMove(0) }
+            else if (event.key === "ArrowDown")  { this.goToMove(this.moves.length - 1) }
+        });
 
         // Изначально скрываем индикатор просмотра
         document.getElementById('viewingIndicator').style.display = 'none';
@@ -197,6 +203,7 @@ class MoveNavigator {
             if (currentPair) {
                 currentPair.appendChild(moveEl);
             }
+            moveEl.scrollIntoView();
 
             // Обновляем для следующего хода
             activeMini = cellIndex;

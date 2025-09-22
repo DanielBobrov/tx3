@@ -21,11 +21,11 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
 )
 
 
-@app.before_request
-def check_session_version():
-    if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
-        session.clear()
-        session["version"] = app.config["SESSION_VERSION"]
+# @app.before_request
+# def check_session_version():
+#     if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
+#         session.clear()
+#         session["version"] = app.config["SESSION_VERSION"]
 
 
 games = Database("games_test.db", "games")
@@ -133,12 +133,24 @@ def inject_variables():
 def on_add_time(data):
     game_id = data.get("game_id")
     player_id = data.get("player_id")
+    print(1)
     if player_id != session.get("player_id"):
         return {"error": 401}
     if timers.get(game_id) is None:
         return {"error": 405}
-    timer: ExtendableTimer = timers.get(game_id)
-    timer.extend(15)
+    if player_id not in games[game_id].players:
+        return {"error": 403}
+    game = games[game_id]
+    player_side = games[game_id].players.index(player_id)
+    other_player_side = (player_side+1)%2
+    game.left_time[other_player_side] += 15
+    games[game_id] = game
+    if game.step == other_player_side:
+        print("ADDING TIME")
+        timer: ExtendableTimer = timers.get(game_id)
+        print(timer.start_time + timer.interval)
+        timer.extend(15)
+    broadcast_game_state(game_id)
 
 
 @socketio.on("join")
@@ -298,7 +310,7 @@ def on_game_fn(game_id: int):
     if game.status == ACTIVE:
         if is_player:
             return render_template("active_game.html", game=game, player=players[session.get("player_id")])
-        return render_template("active_game.html", game=game, player=players[session.get("player_id")], specrator=True)
+        return render_template("active_game.html", game=game, player=players[session.get("player_id")], spectator=True)
 
     if game.status == WAITING:
         # Если это создатель игры, он ждет

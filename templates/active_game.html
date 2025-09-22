@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/ttt_board.html" import render_ttt_board %}
-{% from "components/user_button.html" import render_player_username %}
+{% from "components/macros.html" import render_player_username %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
 {% block content %}
@@ -14,7 +14,7 @@
                 </div>
             {% if game.use_time %}
                 <div class="time">
-                    {% if game.players[0] == player.player_id %}
+                    {% if game.players[1] == player.player_id %}
                     <div class="btn" id="addTimeBtn">+</div>
                     {% endif %}
                     <div class="clock" id="clockX">-:-.-</div>
@@ -34,7 +34,7 @@
                 {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
                 {% if game.use_time %}
                     <div class="time">
-                        {% if game.players[1] == player.player_id %}
+                        {% if game.players[0] == player.player_id %}
                             <div class="btn" id="addTimeBtn">+</div>
                         {% endif %}
                         <div class="clock" id="clockO">-:-.-</div>
@@ -134,4 +134,5 @@
             <script>swapPlayers()</script>
         {% endif %}
     {% endif %}
+    <script src="/static/js/vim.js"></script>
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/ttt_board.html" import render_ttt_board %}
-{% from "components/user_button.html" import render_player_button %}
+{% from "components/macros.html" import render_player_button %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
 {% block content %}

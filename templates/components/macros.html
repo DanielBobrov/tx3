@@ -6,3 +6,8 @@
     {% if player %}{% set player_username = players[player].username %}{% endif %}
     <div class="username">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
 {%- endmacro %}
+{% macro convert_status(state) -%}
+    {% if state == "ended" %}Игра завершена{% endif %}
+    {% if state == "active" %}Игра идет{% endif %}
+    {% if state == "waiting" %}Ждем второго игрока{% endif %}
+{%- endmacro %}

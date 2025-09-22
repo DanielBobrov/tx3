@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/ttt_board.html" import render_ttt_board %}
-{% from "components/user_button.html" import render_player_username %}
+{% from "components/macros.html" import render_player_username %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
 {% block content %}
@@ -12,7 +12,11 @@
                     {{ render_player_username(game.players[0], players) }}
                     {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
                 </div>
-                <div class="clock" id="clockX">{{ "%.2f"|format((o_time_ms or 300000)/60000) }}'</div>
+                {% if game.use_time %}
+                    <div class="time">
+                        <div class="clock" id="clockO">-:-.-</div>
+                    </div>
+                {% endif %}
             </div>
 
             <div class="board-wrap">
@@ -24,7 +28,11 @@
                     {{ render_player_username(game.players[1], players) }}
                     {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
                 </div>
-                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>
+                {% if game.use_time %}
+                    <div class="time">
+                        <div class="clock" id="clockX">-:-.-</div>
+                    </div>
+                {% endif %}
             </div>
 
             {#    <div class="game-controls">#}
@@ -98,8 +106,11 @@
         moveNavigator = new MoveNavigator(board, null);
         moveNavigator.setMoves({{ game.pgn }});
 
+
+        {% if game.use_time %}
         document.getElementById("clockX").textContent = formatTime({{ game.left_time[0]*1000 }});
         document.getElementById("clockO").textContent = formatTime({{ game.left_time[1]*1000 }});
+        {% endif %}
 
         function swapPlayers() {
             let player1 = document.querySelector(".player.top");
