@@ -107,6 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0));
+}
+
+if (!isTouchDevice()) {
+    console.log("DESKTOP");
+    document.write('<script src="/static/js/vim.js"></script>');
+} else {
+    console.log("MOBILE");
+}
 function swapPlayers() {
     let player1 = document.querySelector(".player.top");
     let player2 = document.querySelector(".player.bottom");
