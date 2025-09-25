@@ -21,11 +21,11 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
 )
 
 
-# @app.before_request
-# def check_session_version():
-#     if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
-#         session.clear()
-#         session["version"] = app.config["SESSION_VERSION"]
+@app.before_request
+def check_session_version():
+    if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
+        session.clear()
+        session["version"] = app.config["SESSION_VERSION"]
 
 
 games = Database("games_test.db", "games")
@@ -343,4 +343,4 @@ def on_game_fn(game_id: int):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=False)

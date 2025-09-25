@@ -203,7 +203,8 @@ class MoveNavigator {
             if (currentPair) {
                 currentPair.appendChild(moveEl);
             }
-            moveEl.scrollIntoView();
+            // moveEl.scrollIntoView();
+            this.movesListEl.scrollTop = 10000000000000;
 
             // Обновляем для следующего хода
             activeMini = cellIndex;

@@ -14,7 +14,7 @@
                 </div>
                 {% if game.use_time %}
                     <div class="time">
-                        <div class="clock" id="clockO">-:-.-</div>
+                        <div class="clock" id="clockX">-:-.-</div>
                     </div>
                 {% endif %}
             </div>
@@ -30,7 +30,7 @@
                 </div>
                 {% if game.use_time %}
                     <div class="time">
-                        <div class="clock" id="clockX">-:-.-</div>
+                        <div class="clock" id="clockO">-:-.-</div>
                     </div>
                 {% endif %}
             </div>
@@ -102,7 +102,7 @@
             activeMini: -1,
         });
         board.setState({{ game.grid | safe }}, "{{ game.pgn }}");
-        board.setActiveMini(-2);
+        board.setActiveMini(-1);
         moveNavigator = new MoveNavigator(board, null);
         moveNavigator.setMoves({{ game.pgn }});
 
