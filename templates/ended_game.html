@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% from "components/ttt_board.html" import render_ttt_board %}
+{% from "components/board.html" import render_board %}
 {% from "components/macros.html" import render_player_username %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="/static/css/game.css">
+    <link rel="stylesheet" href="/static/css/game.css">
     <section class="game-layout">
         <div class="board-col">
             <div class="player top">
@@ -20,7 +20,7 @@
             </div>
 
             <div class="board-wrap">
-                {{ render_ttt_board('tttBoard') }}
+                {{ render_board('Board') }}
             </div>
 
             <div class="player bottom">
@@ -43,39 +43,45 @@
         </div>
 
         <aside class="side-col">
-    <div class="panel moves">
-        <div class="panel-head">
-            <h3>Ходы</h3>
-            <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
-        </div>
-        <div class="moves-list" id="movesList"></div>
-        <div class="moves-nav">
-            <button id="navFirst" title="В начало">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
-                </svg>
-            </button>
-            <button id="navPrev" title="Предыдущий ход">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
-                </svg>
-            </button>
-            <button id="navNext" title="Следующий ход">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
-                </svg>
-            </button>
-            <button id="navLast" title="В конец">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="viewing-indicator" id="viewingIndicator">
-            Просмотр хода <span id="viewingMoveNum"></span>
-        </div>
-    </div>
-</aside>
+            <div class="panel moves">
+                <div class="panel-head">
+                    <h3>Ходы</h3>
+                    <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
+                </div>
+                <div class="moves-list" id="movesList"></div>
+                <div class="moves-nav">
+                    <div></div>
+                    <button class="btn"
+                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}console.log(window.INIT.fen);}">
+                        Copy position
+                    </button>
+                    <div></div>
+                    <button id="navFirst" title="В начало">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
+                        </svg>
+                    </button>
+                    <button id="navPrev" title="Предыдущий ход">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+                        </svg>
+                    </button>
+                    <button id="navNext" title="Следующий ход">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
+                        </svg>
+                    </button>
+                    <button id="navLast" title="В конец">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="viewing-indicator" id="viewingIndicator">
+                    Просмотр хода <span id="viewingMoveNum"></span>
+                </div>
+            </div>
+        </aside>
     </section>
 {% endblock %}
 
@@ -92,13 +98,13 @@
             shit: "{{ game }}",
         };
     </script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="/static/js/ttt_board.js"></script>
+    <script src="/static/js/socket.io.js"></script>
+    <script src="/js/board.js"></script>
     <script src="/static/js/timer.js"></script>
     <script src="/static/js/moves_history.js"></script>
-    {#    <script src="/static/js/ttt_game.js"></script>#}
+    {#    <script src="/static/js/game.js"></script>#}
     <script>
-        const board = new TTTBoard('#tttBoard', {
+        const board = new Board('#Board', {
             activeMini: -1,
         });
         board.setState({{ game.grid | safe }}, "{{ game.pgn }}");
@@ -108,8 +114,8 @@
 
 
         {% if game.use_time %}
-        document.getElementById("clockX").textContent = formatTime({{ game.left_time[0]*1000 }});
-        document.getElementById("clockO").textContent = formatTime({{ game.left_time[1]*1000 }});
+            document.getElementById("clockX").textContent = formatTime({{ game.left_time[0]*1000 }});
+            document.getElementById("clockO").textContent = formatTime({{ game.left_time[1]*1000 }});
         {% endif %}
 
         function swapPlayers() {

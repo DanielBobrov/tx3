@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const board = new TTTBoard('#tttBoard', {});
+    const board = new Board('#Board', {});
     window.board = board;
     let moveNavigator = new MoveNavigator(board);
 

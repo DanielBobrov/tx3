@@ -131,7 +131,7 @@ main { flex: 1 0 auto; }
 
 
 /* ========== Board ========== */
-.ttt-board {
+.board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -145,7 +145,7 @@ main { flex: 1 0 auto; }
   box-shadow: 0 0 0 1px var(--border-color-main) inset;
 }
 
-.ttt-board .mini {
+.board .mini {
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -158,14 +158,14 @@ main { flex: 1 0 auto; }
   transition: outline-color .15s ease, box-shadow .15s ease, opacity .15s ease;
 }
 
-.ttt-board .mini.active {
+.board .mini.active {
   outline: 2px solid var(--accent);
   box-shadow: 0 0 0 2px var(--accent) inset;
 }
 /*.ttt-board .disabled { opacity: .6; }*/
-.ttt-board .disabled .cell { pointer-events: none; opacity: .6;}
+.board .disabled .cell { pointer-events: none; opacity: .6;}
 
-.ttt-board .mini[data-won]::after {
+.board .mini[data-won]::after {
   content: attr(data-won);
   position: absolute;
   inset: 0;
@@ -179,7 +179,7 @@ main { flex: 1 0 auto; }
 }
 
 /* Клетки и метки */
-.ttt-board .cell {
+.board .cell {
   background: var(--board-light);
   border-radius: 8px;
   box-sizing: border-box;
@@ -191,26 +191,26 @@ main { flex: 1 0 auto; }
   position: relative;
   transition: background-color .12s ease, transform .06s ease;
 }
-.ttt-board .cell:hover { background: #ecd3ae; }
-.ttt-board .cell:active { transform: scale(.98); }
-.ttt-board .cell.taken { cursor: default; }
+.board .cell:hover { background: #ecd3ae; }
+.board .cell:active { transform: scale(.98); }
+.board .cell.taken { cursor: default; }
 
-.ttt-board .cell .mark {
+.board .cell .mark {
   font-size: clamp(24px, 7.5vw, 64px);
   line-height: .8;
   font-weight: 800;
   color: #4a2f1a; /* базовый цвет X/O, дальше переопределяется */
   pointer-events: none;
 }
-.ttt-board .cell .mark[data-mark="X"] { color: #6b3f1b; } /* X — тёплый коричневый */
-.ttt-board .cell .mark[data-mark="O"] { color: #1f6f5a; } /* O — зелёно‑бирюзовый для контраста */
+.board .cell .mark[data-mark="X"] { color: #6b3f1b; } /* X — тёплый коричневый */
+.board .cell .mark[data-mark="O"] { color: #1f6f5a; } /* O — зелёно‑бирюзовый для контраста */
 
-.ttt-board .cell.highlight {
+.board .cell.highlight {
   box-shadow: inset 0 0 0 100vmax #e3c07a44;
   background: var(--board-dark);
 }
 
-.ttt-board .cell.cursor {
+.board .cell.cursor {
   border: 3px solid #ff8d00;
   /*opacity: 1;*/
   /*background-color: #F0D9B599;*/

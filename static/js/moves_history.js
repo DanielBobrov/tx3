@@ -257,5 +257,5 @@ class MoveNavigator {
     }
 }
 
-// Экспортируем для использования в ttt_game.js
+// Экспортируем для использования в game.js
 window.MoveNavigator = MoveNavigator;

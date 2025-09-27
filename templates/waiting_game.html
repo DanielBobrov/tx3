@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/ttt_board.html" import render_ttt_board %}
+{% from "components/board.html" import render_board %}
 {% from "components/macros.html" import render_player_button %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
@@ -18,7 +18,7 @@
                 {% endif %}            </div>
 
             <div class="board-wrap">
-                {{ render_ttt_board('tttBoard') }}
+                {{ render_board('Board') }}
             </div>
 
             <div class="player bottom">
@@ -67,7 +67,7 @@
         };
     </script>
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/socket.io.js"></script>
 
     <script src="{{ url_for('static', filename='js/waiting_room.js') }}"></script>
 {% endblock %}

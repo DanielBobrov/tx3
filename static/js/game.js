@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit("add_time", {game_id: init.gameId, player_id: init.me})
     });
 
-    const board = new TTTBoard('#tttBoard', {
+    const board = new Board('#Board', {
         myMark: init.myMark || 'X',
         activeMini: typeof init.activeMini === 'number' ? init.activeMini : -1,
         onMove: async ({row, col, mini, mark}) => {
@@ -100,11 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 last_timer();
                 last_timer = createTimer(state.left_time[state.step], state.last_move_time * 1000, document.getElementById("clock" + nextMark))
-            } catch (e) {}
+            } catch (e) {
+            }
         }
 
         // Можно добавить другую логику: подсветку активного мини-поля и т.д.
         // if (typeof state.activeMini === 'number') board.setActiveMini(state.activeMini);
+    });
+
+    document.getElementById("resign-btn").addEventListener("click", () => {
+        console.log("RESIGN");
+        socket.emit("resign", {player_id: init.me, game_id: init.gameId});
     });
 });
 
@@ -120,6 +126,7 @@ if (!isTouchDevice()) {
 } else {
     console.log("MOBILE");
 }
+
 function swapPlayers() {
     let player1 = document.querySelector(".player.top");
     let player2 = document.querySelector(".player.bottom");

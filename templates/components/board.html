@@ -1,30 +1,25 @@
-{% macro render_board(board_id='gameBoard', orientation='white', show_coords=True) -%}
-  {% set files = ['a','b','c','d','e','f','g','h'] %}
-  {% if orientation == 'white' %}
-    {% set rank_range = [8,7,6,5,4,3,2,1] %}
-    {% set file_range = files %}
-  {% else %}
-    {% set rank_range = [1,2,3,4,5,6,7,8] %}
-    {% set file_range = files|reverse %}
-  {% endif %}
-  <div id="{{ board_id }}" class="chessboard" data-orientation="{{ orientation }}">
-    {% for r in rank_range %}
-      {% for fi in range(0,8) %}
-        {% set f = file_range[fi] %}
-        {% set parity = (fi + r) % 2 %}
-        {% set color = 'light' if parity == 0 else 'dark' %}
-        <div class="square {{ color }}" data-square="{{ f }}{{ r }}" data-file="{{ f }}" data-rank="{{ r }}">
-          {% if show_coords %}
-            {% if (orientation == 'white' and r == 1) or (orientation == 'black' and r == 8) %}
-              <span class="coord coord-file">{{ f }}</span>
-            {% endif %}
-            {% if (orientation == 'white' and f == 'a') or (orientation == 'black' and f == 'h') %}
-              <span class="coord coord-rank">{{ r }}</span>
-            {% endif %}
-          {% endif %}
-          <div class="piece"></div>
-        </div>
-      {% endfor %}
+{% macro render_board(board_id='Board') -%}
+<div id="{{ board_id }}" class="board" data-size="3" data-cell-size="3">
+  {% for mr in range(0,3) %}
+    {% for mc in range(0,3) %}
+      {% set miniIndex = mr * 3 + mc %}
+      <div class="mini" data-mini="{{ miniIndex }}">
+        {% for sr in range(0,3) %}
+          {% for sc in range(0,3) %}
+            {% set row = mr * 3 + sr %}
+            {% set col = mc * 3 + sc %}
+            {% set cellIndex = sr * 3 + sc %}
+            <div class="cell"
+                 data-row="{{ row }}"
+                 data-col="{{ col }}"
+                 data-mini="{{ miniIndex }}"
+                 data-cell="{{ cellIndex }}">
+              <div class="mark"></div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
     {% endfor %}
-  </div>
+  {% endfor %}
+</div>
 {%- endmacro %}

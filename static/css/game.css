@@ -52,7 +52,8 @@
 
 /* Навигация по ходам */
 .moves-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: .2fr .2fr 1fr .2fr .2fr .2fr .2fr 1fr .2fr .2fr;
   gap: 4px;
   padding: 8px;
   border-top: 1px solid #2a241c;

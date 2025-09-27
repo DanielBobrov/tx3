@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from functools import wraps
 
 import dotenv
@@ -30,7 +31,7 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
 
 games: Database[Game] = Database(Game, "games_test_new.db", "games")
 active_games = games
-timers = {}
+timers: dict[int: ExtendableTimer] = {}
 players: Database[Player] = Database(Player, "players_test_new.db", "players")
 
 
@@ -105,7 +106,7 @@ def broadcast_game_state(game_id: int):
     # print(f"Broadcasted game state: {game.get_state_for_client()}")
 
 
-def lose_game(game, loser_mark):
+def lose_game(game: Game, loser_mark):
     game.status = ENDED
     game.winner = (loser_mark + 1) % 2
     # del active_games[game.game_id]
@@ -174,6 +175,21 @@ def validate_move(game: Game, move):
         1] < active_mini % 3 * 3 + 3):
         return False
     return True
+
+
+@socketio.on("resign")
+@auth_player
+def on_resign_fn(data):
+    player_id = data.get("player_id")
+    if player_id != session.get("player_id"):
+        return {"error": 403}
+    game_id = data.get("game_id")
+    game = games[game_id]
+    if game is None:
+        return {"error": 403}
+    if player_id not in game.players:
+        return {"error": 403}
+    lose_game(game, player_id)
 
 
 @socketio.on("move")
@@ -334,7 +350,7 @@ def on_game_fn(game_id: int):
         return render_template("active_game.html", game=game, player=players[session.get("player_id")], spectator=True)
 
     if game.status == WAITING:
-        # Если это создатель игры, он ждет
+        # Если это создатель игры, то он ждет
         if is_player:
             return render_template("waiting_game.html", game=game, player=players[session.get("player_id")])
 
