@@ -20,7 +20,12 @@ function formatTime(totalMilliseconds) {
     }
 
     // Минуты и секунды показываем всегда
-    result += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
+    result += `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+    // Добавляем миллисекунды, только если осталось меньше минуты
+    if (minutes === 0 && seconds < 30) {
+        result += `.${centiseconds.toString().padStart(2, '0')}`;
+    }
 
     return result;
 }

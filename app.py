@@ -1,53 +1,53 @@
-import random
-from datetime import datetime, timedelta
+import os
 from functools import wraps
-# from threading import Timer
 
+import dotenv
 import flask
 from flask import session, redirect, render_template, request
 from flask_socketio import SocketIO, join_room, emit
 
-from database import Database
+from database import *
 from utils import *
 
+dotenv.load_dotenv()
 app = flask.Flask(__name__)
-app.secret_key = "key"
+app.secret_key = os.getenv('SECRET_KEY')
 app.config["SESSION_VERSION"] = datetime.now().timestamp()
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
 socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
-# logger=True,          # для отладки
-#     engineio_logger=True  # детальные логи
-)
+                    # logger=True,          # для отладки
+                    #     engineio_logger=True  # детальные логи
+                    )
 
 
-@app.before_request
-def check_session_version():
-    if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
-        session.clear()
-        session["version"] = app.config["SESSION_VERSION"]
+# @app.before_request
+# def check_session_version():
+#     if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
+#         session.clear()
+#         session["version"] = app.config["SESSION_VERSION"]
 
 
-games = Database("games_test.db", "games")
+games: Database[Game] = Database(Game, "games_test_new.db", "games")
 active_games = games
 timers = {}
-# invites = Database("invites.db", "invites")
-players = PlayersDatabase("players_test.db", "players")
+players: Database[Player] = Database(Player, "players_test_new.db", "players")
 
 
-def create_game(player_0: int,player_piece: str, use_time: bool = False, duration: int = 0, addition: int = 0, ) -> Game:
+def create_game(player_0: int, player_piece: str, use_time: bool = False, duration: int = 0,
+                addition: int = 0, ) -> Game:
     game_players = [None, None]
     game_players[player_piece == "O"] = player_0
     game = Game(
-        game_id=len(games),
+        id=len(games),
         players=game_players,
         use_time=use_time,
         left_time=[duration * 60, duration * 60],
-        addition=addition,
+        time_addition=addition,
         last_move_time=-1,
     )
     game_id = games.append(game)
-    game.game_id = game_id
+    game.id = game_id
     games[game_id] = game
     return game
 
@@ -59,7 +59,7 @@ def auth_player(function):
             player = Player(None, None)
             player_id = players.append(player)
             session["player_id"] = player_id
-            print(f"AUTH NEW PLAYER = {player}")
+            print(f"AUTH NEW PLAYER = {players[player_id]}")
         return function(*args, **kwargs)
 
     return wrapper
@@ -104,18 +104,19 @@ def broadcast_game_state(game_id: int):
     socketio.emit("update_state", game.get_state_for_client(), to=f"game-{game_id}")
     # print(f"Broadcasted game state: {game.get_state_for_client()}")
 
+
 def lose_game(game, loser_mark):
     game.status = ENDED
-    game.winner = (loser_mark+1)%2
+    game.winner = (loser_mark + 1) % 2
     # del active_games[game.game_id]
     if game.use_time:
         try:
-            timers[game.game_id].cancel()
+            timers[game.id].cancel()
         finally:
-            del timers[game.game_id]
+            del timers[game.id]
 
-    games[game.game_id] = game
-    broadcast_game_state(game.game_id)
+    games[game.id] = game
+    broadcast_game_state(game.id)
 
 
 def lose_by_time(game, player_mark):
@@ -133,12 +134,24 @@ def inject_variables():
 def on_add_time(data):
     game_id = data.get("game_id")
     player_id = data.get("player_id")
+    print(1)
     if player_id != session.get("player_id"):
         return {"error": 401}
     if timers.get(game_id) is None:
         return {"error": 405}
-    timer: ExtendableTimer = timers.get(game_id)
-    timer.extend(15)
+    if player_id not in games[game_id].players:
+        return {"error": 403}
+    game = games[game_id]
+    player_side = games[game_id].players.index(player_id)
+    other_player_side = (player_side + 1) % 2
+    game.left_time[other_player_side] += 15
+    games[game_id] = game
+    if game.step == other_player_side:
+        print("ADDING TIME")
+        timer: ExtendableTimer = timers.get(game_id)
+        print(timer.start_time + timer.interval)
+        timer.extend(15)
+    broadcast_game_state(game_id)
 
 
 @socketio.on("join")
@@ -155,6 +168,14 @@ def on_join(data):
     emit("update_state", game.get_state_for_client())
 
 
+def validate_move(game: Game, move):
+    active_mini = game.active_mini
+    if not (active_mini // 3 * 3 <= move[0] < active_mini // 3 * 3 + 3 and active_mini % 3 * 3 <= move[
+        1] < active_mini % 3 * 3 + 3):
+        return False
+    return True
+
+
 @socketio.on("move")
 @auth_player
 def on_move_fn(data):
@@ -169,17 +190,20 @@ def on_move_fn(data):
         for game in active_games:
             print(game)
         raise
-    if game is None or game.status != ACTIVE or player not in game.players: return
+    if game is None or game.status != ACTIVE or player not in game.players: return {"error": 400}
 
     player_mark = 0 if game.players[0] == player else 1
     other_player_mark = (player_mark + 1) % 2
     if game.step != player_mark:
         # Это не его ход
-        return
+        return {"error": 400}
 
     if game.grid[row][col] is not None:
         # Клетка занята
-        return
+        return {"error": 400}
+
+    if not validate_move(game, (row, col)):
+        return {"error": 400}
 
     if game.use_time:
         cur_time = datetime.now()
@@ -240,11 +264,11 @@ def on_get_login_fn():
 @app.route("/login", methods=["POST"])
 @auth_player
 def on_post_login_fn():
-    player = players[request.json.get("username")]
+    player = players.get_by("username", request.json.get("username"))[0]
     if player is None or player.password != request.json.get("password"):
         return {"error": "invalid_credentials"}, 401
     print(f"Logged new {player = }")
-    session["player_id"] = player.player_id
+    session["player_id"] = player.id
     return "200"
 
 
@@ -257,10 +281,16 @@ def on_get_signup_fn():
 @app.route("/signup", methods=["POST"])
 @auth_player
 def on_post_signup_fn():
-    if players[request.json.get("username")] is not None:
+    username: str = request.json.get("username")
+    if not players[username]:
         return {"error": "username_taken"}, 401
+    if len(username) > 30 or len(username) < 3:
+        return {"error": "username is invalid"}, 401
+    for i in username:
+        if i.isspace():
+            return {"error": "username is invalid"}, 401
     player = Player(username=request.json.get("username"), password=request.json.get("password"),
-                    player_id=session.get("player_id"))
+                    id=session.get("player_id"))
     players[session.get("player_id")] = player
     return "200"
 
@@ -277,15 +307,18 @@ def on_create_game_fn():
         addition=request.json.get("addition", 0),
         player_piece=request.json.get("player_piece"),
     )
-    player.games.append(game)
+    player.games.append(game.id)
     players[player_id] = player
-    return {"game_id": f"{game.game_id}"}
+    return {"game_id": f"{game.id}"}
 
 
 @app.route("/game/<int:game_id>", methods=["GET"])
 @auth_player
 def on_game_fn(game_id: int):
-    game: Game = games[game_id]
+    try:
+        game: Game = games[game_id]
+    except IndexError:
+        return {"error": 404}
     if game is None:
         return redirect("/")
     player_id = session["player_id"]
@@ -298,7 +331,7 @@ def on_game_fn(game_id: int):
     if game.status == ACTIVE:
         if is_player:
             return render_template("active_game.html", game=game, player=players[session.get("player_id")])
-        return render_template("active_game.html", game=game, player=players[session.get("player_id")], specrator=True)
+        return render_template("active_game.html", game=game, player=players[session.get("player_id")], spectator=True)
 
     if game.status == WAITING:
         # Если это создатель игры, он ждет

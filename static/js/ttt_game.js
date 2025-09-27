@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let addTimeBtn = document.getElementById("addTimeBtn");
     if (addTimeBtn !== null) addTimeBtn.addEventListener("click", () => {
-        socket.emit("add_time", {game_id: init.gameId, player_id: init.player_id})
+        console.log("ADD TIME", {game_id: init.gameId, player_id: init.me});
+        socket.emit("add_time", {game_id: init.gameId, player_id: init.me})
     });
 
     const board = new TTTBoard('#tttBoard', {
@@ -23,12 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-    moveNavigator = new MoveNavigator(board, socket);
+    window.board = board;
+    moveNavigator = new MoveNavigator(board);
 
     if (init.initialGrid) board.setState(init.initialGrid, init.initialPgn);
 
     socket.on('connect', () => {
         console.log('Socket.IO connected!');
+        console.log(init);
         socket.emit('join', {game_id: init.gameId});
     });
 
@@ -62,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // }
 
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.board) {
-            board.setState(state.board, state.pgn);
+        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.grid) {
+            board.setState(state.grid, state.pgn);
         } else {
             console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
         }
@@ -105,6 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0));
+}
+
+if (!isTouchDevice()) {
+    console.log("DESKTOP");
+    document.write('<script src="/static/js/vim.js"></script>');
+} else {
+    console.log("MOBILE");
+}
 function swapPlayers() {
     let player1 = document.querySelector(".player.top");
     let player2 = document.querySelector(".player.bottom");

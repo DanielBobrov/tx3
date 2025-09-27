@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/user_button.html" import render_player_button %}
+{% from "components/macros.html" import render_player_button, convert_status %}
 {% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в кресты-обручи онлайн{% endblock %}
 {% block content %}
     <section class="hero">
@@ -34,14 +34,16 @@
                     <div style="text-align: center">Победитель</div>
                     <div style="text-align: center">Играл за X</div>
                     <div style="text-align: center">Играл за O</div>
+                    <div style="text-align: center">Время</div>
                     <div style="text-align: center">Статус</div>
                 </div>
                 {% for game in last_games or [] %}
-                    <a href="/game/{{ game.game_id }}" class="tr btn ghost">
+                    <a href="/game/{{ game.id }}" class="tr btn ghost">
                         {{ render_player_button(game.players[game.winner], players) }}
                         {{ render_player_button(game.players[0], players) }}
                         {{ render_player_button(game.players[1], players) }}
-                        <div style="text-align: center">{{ game.status }}</div>
+                        <div style="text-align: center">{{ "-" if not game.use_time else "kys" }}</div>
+                        <div style="text-align: center">{{ convert_status(game.status) }}</div>
                     </a>
                 {% else %}
                     <div class="tr empty">

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/ttt_board.html" import render_ttt_board %}
-{% from "components/user_button.html" import render_player_username %}
+{% from "components/macros.html" import render_player_username %}
 {% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
 
 {% block content %}
@@ -9,12 +9,12 @@
         <div class="board-col">
             <div class="player top">
                 <div class="user">
-                    {{ render_player_username(game.players[0], players) }}
+                    X:  {{ render_player_username(game.players[0], players) }}
                     {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
                 </div>
             {% if game.use_time %}
                 <div class="time">
-                    {% if game.players[0] == player.player_id %}
+                    {% if game.players[1] == player.id %}
                     <div class="btn" id="addTimeBtn">+</div>
                     {% endif %}
                     <div class="clock" id="clockX">-:-.-</div>
@@ -28,13 +28,13 @@
 
             <div class="player bottom">
                 <div class="user">
-                    {{ render_player_username(game.players[1], players) }}
+                    O: {{ render_player_username(game.players[1], players) }}
                     {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
                 </div>
                 {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
                 {% if game.use_time %}
                     <div class="time">
-                        {% if game.players[1] == player.player_id %}
+                        {% if game.players[0] == player.id %}
                             <div class="btn" id="addTimeBtn">+</div>
                         {% endif %}
                         <div class="clock" id="clockO">-:-.-</div>
@@ -113,24 +113,23 @@
         <script src="/static/js/spectator.js"></script>
         <script>
             window.INIT = {
-                gameId: "{{ game.game_id if game else '' }}",
+                gameId: "{{ game.id if game else '' }}",
             };
         </script>
     {% else %}
         <script>
             None = null;
             window.INIT = {
-                gameId: {{ game.game_id if game else '' }},
-                myMark: "{{ ['O', 'X'][game.players[0] == player.player_id] }}",
+                gameId: {{ game.id if game else '' }},
+                myMark: "{{ ['O', 'X'][game.players[0] == player.id] }}",
                 initialGrid: {{ game.grid | safe }},
-                initialPgn: {{ game.pgn }},
+                initialPgn: {{ game.pgn if game.pgn else "''"|safe }},
                 activeMini: {{ game.active_mini if game and game.active_mini else 4 }},
-                wsUrl: "{{ game.ws_url if game else '' }}",
-                me: {{ player.player_id if player else 'null' }}
+                me: {{ player.id if player else 'null' }}
             };
         </script>
         <script src="/static/js/ttt_game.js"></script>
-        {% if game.players[0] == player.player_id %}
+        {% if game.players[0] == player.id %}
             <script>swapPlayers()</script>
         {% endif %}
     {% endif %}

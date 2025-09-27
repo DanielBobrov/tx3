@@ -4,31 +4,50 @@ import pickle
 import sqlite3
 import threading
 import time
-from typing import Any, Iterator, Optional, Union
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from typing import Any, Iterator, Optional, Union, List
 
 WAITING, ACTIVE, ENDED = "waiting", "active", "ended"
 
 
+@dataclass
 class Game:
-    def __init__(self, game_id, players: list, state: list = None, step: int = 0, status=WAITING, grid=None,
-                 left_time=None, addition: int = 0, use_time=False, last_move_time=None, winner=None):
-        self.game_id = game_id
-        self.pgn = state if state else []
-        self.players = players
-        self.step = step
-        self.status = status
-        self.grid = grid if grid else [[None for __ in range(9)] for _ in range(9)]
-        self.use_time = use_time
-        self.left_time = left_time
-        self.time_addition = addition
-        self.last_move_time = last_move_time
-        self.winner = winner
+    id: int
+    players: List[int]
+    pgn: str = ""
+    step: int = 0
+    status: str = WAITING  # Предполагаю, что WAITING определена где-то в коде
+    left_time: Optional[List[float]] = None
+    time_addition: int = 0
+    use_time: bool = False
+    last_move_time: Optional[int] = None
+    winner: Optional[str] = None
+    fen: str = "0"*81
 
     def add_step(self, step):
-        self.pgn.append(step)
+        self.pgn += str(step)
         self.step = (self.step + 1) % 2
 
-    def count_active_mini(self):
+    def __get_grid(self):
+        grid = [[None for __ in range(9)] for _ in range(9)]
+        for i in range(9):
+            for j in range(9):
+                mark = self.fen[i * 9 + j]
+                grid[i][j] = None if mark == "0" else "X" if mark == "1" else "O"
+        return grid
+
+    def __set_grid(self, grid):
+        fen = ""
+        for i in range(9):
+            for j in range(9):
+                fen += "0" if grid[i][j] is None else "1" if grid[i][j] == "X" else "2"
+        self.fen = fen
+
+    grid = property(__get_grid, __set_grid)
+
+    @property
+    def active_mini(self):
         if not self.pgn:
             return 4
         step = int(self.pgn[-1])
@@ -37,27 +56,24 @@ class Game:
     def get_state_for_client(self):
         """Возвращает словарь с состоянием игры для отправки клиенту."""
         return {
-            "board": self.grid,
+            "grid": self.grid,
             "status": self.status,
-            "pgn": "".join(map(str, self.pgn)),
+            "pgn": self.pgn,
             "step": self.step,
             "players": self.players,
             "winner": self.winner,
             "left_time": [round(i, 2) for i in self.left_time],
             "last_move_time": self.last_move_time.timestamp() if self.last_move_time != -1 else None,
-            "active_mini": self.count_active_mini()
+            "active_mini": self.active_mini
         }
-
-    def __repr__(self):
-        return f"Game({self.game_id=}, {self.winner = }, {self.players=}, {self.pgn=}, {self.status=}, {self.grid=})"
 
 
 @dataclasses.dataclass
 class Player:
     username: str
     password: str
-    player_id: int = -1
-    games: list[Game] = dataclasses.field(default_factory=list)
+    id: int = None
+    games: list[int] = dataclasses.field(default_factory=list)
 
 
 class PlayersDatabase:
@@ -92,7 +108,7 @@ class PlayersDatabase:
         ''')
         self.conn.commit()
 
-    def _serialize(self, item: Any) -> tuple[str, str]:
+    def _serialize(self, item: Player) -> tuple[str, str]:
         """
         Сериализация объекта для хранения в БД.
 
@@ -123,17 +139,24 @@ class PlayersDatabase:
 
     def append(self, item: Player) -> int:
         """Добавление элемента в конец."""
-        data, data_type = self._serialize(item)
+        data_dict = asdict(item)
+        # Убираем id из словаря, если он есть, чтобы база сама его назначила
+        data_dict.pop('id', None)
+        data_dict.pop('player_id', None)
+
+        columns = ', '.join(data_dict.keys())
+        placeholders = ', '.join(['?' for _ in data_dict])
+        values = tuple(data_dict.values())
+
         self.cursor.execute(
-            f"INSERT INTO {self.table_name} (username, data, type) VALUES (?, ?, ?)",
-            (item.username, data, data_type)
+            f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})",
+            values
         )
         player_id = self.cursor.lastrowid
         self.conn.commit()
 
-        item.player_id = player_id
+        item.id = player_id
         self[player_id] = item
-
         return player_id
 
     def extend(self, iterable) -> None:
@@ -178,10 +201,14 @@ class PlayersDatabase:
             )
 
             # Вставляем новый элемент
-            data, data_type = self._serialize(item)
+            data_dict = asdict(item)
+            data_dict['id'] = target_id
+            columns = ', '.join(data_dict.keys())
+            placeholders = ', '.join(['?' for _ in data_dict])
+            values = tuple(data_dict.values())
             self.cursor.execute(
-                f"INSERT INTO {self.table_name} (id, username, data, type) VALUES (?, ?, ?, ?)",
-                (target_id, item.username, data, data_type)
+                f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})",
+                values
             )
             self.conn.commit()
 
@@ -193,7 +220,7 @@ class PlayersDatabase:
                 return
         raise ValueError(f"{item!r} not in Database")
 
-    def pop(self, index: int = -1) -> Any:
+    def pop(self, index: int = -1) -> Player:
         """Удаление и возврат элемента по индексу."""
         if len(self) == 0:
             raise IndexError("pop from empty list")
@@ -244,7 +271,7 @@ class PlayersDatabase:
         self.cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         return self.cursor.fetchone()[0]
 
-    def __getitem__(self, key: Union[int, slice]) -> Any:
+    def __getitem__(self, key: Union[int, slice]) -> Player:
         """Получение элемента по индексу или срезу."""
         if isinstance(key, slice):
             # Обработка среза
@@ -252,37 +279,41 @@ class PlayersDatabase:
             result = []
             for i in range(start, stop, step):
                 self.cursor.execute(
-                    f"SELECT id, username, data, type FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?",
+                    f"SELECT * FROM {self.table_name} ORDER BY id LIMIT 1 OFFSET ?",
                     (i,)
                 )
                 row = self.cursor.fetchone()
                 if row:
-                    player = self._deserialize(row[-2], row[-1])
+                    columns = [description[0] for description in self.cursor.description]
+                    data_dict = dict(zip(columns, row))
+                    player = Player(**data_dict)
                     result.append(player)
             return result
         elif isinstance(key, int):
             # Обработка индекса
             index = self._normalize_index(key)
             self.cursor.execute(
-                f"SELECT id, data, type FROM {self.table_name} WHERE id = ?",
+                f"SELECT * FROM {self.table_name} WHERE id = ?",
                 (index,)
             )
             row = self.cursor.fetchone()
             if row:
-                player = self._deserialize(row[-2], row[-1])
-                player.player_id = row[0]
-                return player
+                columns = [description[0] for description in self.cursor.description]
+                data_dict = dict(zip(columns, row))
+                return Player(**data_dict)
             return None
         elif isinstance(key, str):
             print("getitem from db with key: ", key, type(key))
             # Обработка индекса
             self.cursor.execute(
-                f"SELECT username, data, type FROM {self.table_name} WHERE username = ?",
+                f"SELECT * FROM {self.table_name} WHERE username = ?",
                 (key,)
             )
             row = self.cursor.fetchone()
             if row:
-                return self._deserialize(row[-2], row[-1])
+                columns = [description[0] for description in self.cursor.description]
+                data_dict = dict(zip(columns, row))
+                return Player(**data_dict)
             return None
         else:
             return None
@@ -324,10 +355,12 @@ class PlayersDatabase:
             row = self.cursor.fetchone()
 
             if row:
-                data, data_type = self._serialize(value)
+                data_dict = asdict(value)
+                columns = ', '.join([f"{key} = ?" for key in data_dict.keys()])
+                values = tuple(data_dict.values()) + (row[0],)
                 self.cursor.execute(
-                    f"UPDATE {self.table_name} SET username = ?, data = ?, type = ? WHERE id = ?",
-                    (value.username, data, data_type, row[0])
+                    f"UPDATE {self.table_name} SET {columns} WHERE id = ?",
+                    values
                 )
                 self.conn.commit()
 
@@ -374,15 +407,19 @@ class PlayersDatabase:
 
     def __iter__(self) -> Iterator[Player]:
         """Итератор по элементам."""
-        self.cursor.execute(f"SELECT username, data, type FROM {self.table_name} ORDER BY id")
+        self.cursor.execute(f"SELECT * FROM {self.table_name} ORDER BY id")
         for row in self.cursor.fetchall():
-            yield self._deserialize(row[-2], row[-1])
+            columns = [description[0] for description in self.cursor.description]
+            data_dict = dict(zip(columns, row))
+            yield Player(**data_dict)  # изменено: создание через dataclass
 
     def __reversed__(self) -> Iterator[Player]:
         """Обратный итератор."""
-        self.cursor.execute(f"SELECT username, data, type FROM {self.table_name} ORDER BY id DESC")
+        self.cursor.execute(f"SELECT * FROM {self.table_name} ORDER BY id DESC")
         for row in self.cursor.fetchall():
-            yield self._deserialize(row[-2], row[-1])
+            columns = [description[0] for description in self.cursor.description]
+            data_dict = dict(zip(columns, row))
+            yield Player(**data_dict)  # изменено: создание через dataclass
 
     def __add__(self, other) -> list:
         """Конкатенация с другим итерируемым объектом."""

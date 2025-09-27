@@ -143,6 +143,7 @@
 
         attach() {
             this.el.addEventListener('click', async (e) => {
+                console.error("CLICKED");
                 const cell = e.target.closest('.cell');
                 if (!cell || !this.el.contains(cell)) return;
 

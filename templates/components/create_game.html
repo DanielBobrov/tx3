@@ -33,7 +33,7 @@
             </div>
 
             <div class="form-group">
-                <label>Выберите фигуру</label>
+                <label>Выберите сторону</label>
                 <div class="radio-group">
                     <div class="radio-option">
                         <input type="radio" id="pieceX" name="piece" value="X">
@@ -76,7 +76,8 @@
     position: relative;
     width: 50px;
     height: 26px;
-    background-color: #ccc;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-color-light);
     border-radius: 34px;
     transition: background-color 0.3s;
     margin-right: 12px;
@@ -86,21 +87,23 @@
 .switch-slider::before {
     content: "";
     position: absolute;
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
+    height: 22px;
+    width: 22px;
+    {#left: 2px;#}
+    {#bottom: 2px;#}
+    background-color: var(--bg-contrast);
+    border: 1px solid var(--border-active-color);
     border-radius: 50%;
     transition: transform 0.3s;
 }
 
 .switch-input:checked + .switch-slider {
-    background-color: #4CAF50;
+    background-color: var(--bg-dark);
 }
 
 .switch-input:checked + .switch-slider::before {
     transform: translateX(24px);
+    border-color: var(--accent);
 }
 
 .switch-text {

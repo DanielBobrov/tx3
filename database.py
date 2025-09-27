@@ -1,16 +1,19 @@
-import json
-import pickle
-import sqlite3
-from typing import Any, Iterator, Optional, Union
+import typing
+from dataclasses import fields
+from typing import Type, Generic, TypeVar
+
+from utils import *
+
+T = TypeVar('T')
 
 
-class Database:
+class Database(Generic[T]):
     """
     Класс для работы с SQLite базой данных с интерфейсом как у list.
     Хранит данные любого типа, сериализуя их в JSON или pickle.
     """
 
-    def __init__(self, db_path: str = ":memory:", table_name: str = "data"):
+    def __init__(self, item_type: Type[T], db_path: str = ":memory:", table_name: str = "data"):
         """
         Инициализация базы данных.
 
@@ -18,43 +21,67 @@ class Database:
             db_path: Путь к файлу БД или ':memory:' для БД в памяти
             table_name: Имя таблицы для хранения данных
         """
+        self.item_type = item_type
         self.db_path = db_path
         self.table_name = table_name
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.cursor = self.conn.cursor()
+        self.dataclass_fields = [i for i in fields(self.item_type) if i.name != "id"]
         self._create_table()
 
+    def _get_sql_type(self, py_type: Type) -> str:
+        """Простое сопоставление типов Python с типами SQLite."""
+        # Для простоты и гибкости:
+        if py_type is int:
+            return 'INTEGER'
+        if py_type is float:
+            return 'REAL'
+        # Все остальное (str, list, dict, custom objects, Optional, Union) храним как TEXT
+        return 'TEXT'
+
     def _create_table(self):
-        """Создание таблицы если она не существует."""
+        """Динамическое создание таблицы на основе полей датакласса."""
+
+        column_definitions = ["id INTEGER PRIMARY KEY AUTOINCREMENT"]
+
+        for field in self.dataclass_fields:
+            # Извлекаем базовый тип, игнорируя Optional, Union, и т.п. для простого маппинга
+            py_type = field.type
+
+            sql_type = self._get_sql_type(py_type)
+            column_definitions.append(f"{field.name} {sql_type}")
+
+        schema = ",\n".join(column_definitions)
+
         self.cursor.execute(f'''
             CREATE TABLE IF NOT EXISTS {self.table_name} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                data TEXT NOT NULL,
-                type TEXT NOT NULL
+                {schema}
             )
         ''')
         self.conn.commit()
 
-    def _serialize(self, item: Any) -> tuple[str, str]:
+    def _serialize(self, item: T) -> tuple[list[str], list[str]]:
         """
         Сериализация объекта для хранения в БД.
 
         Returns:
-            Кортеж (сериализованные данные, тип сериализации)
+            columns, values
         """
-        try:
-            # Пробуем JSON для простых типов
-            return json.dumps(item), 'json'
-        except (TypeError, ValueError):
-            # Используем pickle для сложных объектов
-            return pickle.dumps(item).hex(), 'pickle'
+        obj = asdict(item)
+        obj = {i: obj[i] for i in obj.keys() if i != "id"}
+        columns = obj.keys()
+        values = []
+        for i in list(obj.values()):
+            values.append(pickle.dumps(i).hex())
+        return columns, values
 
-    def _deserialize(self, data: str, data_type: str) -> Any:
+    def _deserialize(self, row) -> T:
         """Десериализация объекта из БД."""
-        if data_type == 'json':
-            return json.loads(data)
-        else:  # pickle
-            return pickle.loads(bytes.fromhex(data))
+        fields = [i.name for i in self.dataclass_fields]
+        kwargs = {"id": row[0]}
+        for field, val in zip(fields, row[1:]):
+            kwargs[field] = pickle.loads(bytes.fromhex(val))
+        return self.item_type(**kwargs)
 
     def _normalize_index(self, index: int) -> int:
         """Нормализация отрицательных индексов."""
@@ -64,16 +91,15 @@ class Database:
             raise IndexError("list index out of range")
         return index
 
-    def append(self, item: Any) -> int:
+    def append(self, item: T) -> int:
         """Добавление элемента в конец."""
-        data, data_type = self._serialize(item)
+        columns, values = self._serialize(item)
         self.cursor.execute(
-            f"INSERT INTO {self.table_name} (data, type) VALUES (?, ?)",
-            (data, data_type)
+            f"INSERT INTO {self.table_name} ({", ".join(columns)}) VALUES ({", ".join(["?"] * len(columns))})",
+            values
         )
         item_id = self.cursor.lastrowid
         self.conn.commit()
-
         return item_id
 
     def extend(self, iterable) -> None:
@@ -81,7 +107,7 @@ class Database:
         for item in iterable:
             self.append(item)
 
-    def insert(self, index: int, item: Any) -> None:
+    def insert(self, index: int, item: Game) -> None:
         """Вставка элемента по индексу."""
         length = len(self)
 
@@ -118,14 +144,14 @@ class Database:
             )
 
             # Вставляем новый элемент
-            data, data_type = self._serialize(item)
+            columns, values = self._serialize(item)
             self.cursor.execute(
-                f"INSERT INTO {self.table_name} (id, data, type) VALUES (?, ?, ?)",
-                (target_id, data, data_type)
+                f"INSERT INTO {self.table_name} ({", ".join(columns)}) VALUES ({", ".join(["?"] * len(columns))})",
+                values
             )
             self.conn.commit()
 
-    def remove(self, item: Any) -> None:
+    def remove(self, item: Game) -> None:
         """Удаление первого вхождения элемента."""
         for i, elem in enumerate(self):
             if elem == item:
@@ -133,7 +159,7 @@ class Database:
                 return
         raise ValueError(f"{item!r} not in list")
 
-    def pop(self, index: int = -1) -> Any:
+    def pop(self, index: int = -1) -> Game:
         """Удаление и возврат элемента по индексу."""
         if len(self) == 0:
             raise IndexError("pop from empty list")
@@ -148,7 +174,7 @@ class Database:
         self.cursor.execute(f"DELETE FROM {self.table_name}")
         self.conn.commit()
 
-    def index(self, item: Any, start: int = 0, stop: Optional[int] = None) -> int:
+    def index(self, item: Game, start: int = 0, stop: Optional[int] = None) -> int:
         """Поиск индекса первого вхождения элемента."""
         stop = stop if stop is not None else len(self)
         for i in range(start, stop):
@@ -156,7 +182,30 @@ class Database:
                 return i
         return None
 
-    def count(self, item: Any) -> int:
+    def get_by(self, key, value) -> list[T]:
+        """Получение элементов по ключу и значению."""
+        # Получаем список столбцов из метаданных таблицы
+        self.cursor.execute(f"PRAGMA table_info({self.table_name})")
+        columns = [row[1] for row in self.cursor.fetchall()]
+
+        if key not in columns:
+            raise ValueError(f"Столбец '{key}' не существует в таблице {self.table_name}")
+
+        result = []
+        # self.conn.set_trace_callback(print)
+        # print(pickle.dumps(value).hex())
+
+        # Безопасно вставляем имя столбца после валидации
+        self.cursor.execute(
+            f"SELECT * FROM {self.table_name} WHERE {key} = ?",
+            (pickle.dumps(value).hex(),)
+        )
+        rows = self.cursor.fetchall()
+        if rows:
+            result = [self._deserialize(row) for row in rows]
+        return result
+
+    def count(self, item: Game) -> int:
         """Подсчет количества вхождений элемента."""
         return sum(1 for elem in self if elem == item)
 
@@ -184,7 +233,7 @@ class Database:
         self.cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
         return self.cursor.fetchone()[0]
 
-    def __getitem__(self, key: Union[int, slice]) -> Any:
+    def __getitem__(self, key: Union[int, slice]) -> T:
         """Получение элемента по индексу или срезу."""
         if isinstance(key, slice):
             # Обработка среза
@@ -192,28 +241,28 @@ class Database:
             result = []
             for i in range(start, stop, step):
                 self.cursor.execute(
-                    f"SELECT data, type FROM {self.table_name} WHERE id = ?",
+                    f"SELECT * FROM {self.table_name} WHERE id = ?",
                     (i,)
                 )
                 row = self.cursor.fetchone()
                 if row:
-                    result.append(self._deserialize(row[0], row[1]))
+                    result.append(self._deserialize(row))
             return result
         elif isinstance(key, int):
             # Обработка индекса
             index = self._normalize_index(key)
             self.cursor.execute(
-                f"SELECT data, type FROM {self.table_name} WHERE id = ?",
+                f"SELECT * FROM {self.table_name} WHERE id = ?",
                 (index,)
             )
             row = self.cursor.fetchone()
             if row:
-                return self._deserialize(row[0], row[1])
+                return self._deserialize(row)
             return None
         else:
             return None
 
-    def __setitem__(self, key: Union[int, slice], value: Any) -> None:
+    def __setitem__(self, key: Union[int, slice], value: T) -> None:
         """Установка элемента по индексу или срезу."""
         if isinstance(key, slice):
             # Обработка среза
@@ -250,11 +299,11 @@ class Database:
             row = self.cursor.fetchone()
 
             if row:
-                data, data_type = self._serialize(value)
-                self.cursor.execute(
-                    f"UPDATE {self.table_name} SET data = ?, type = ? WHERE id = ?",
-                    (data, data_type, row[0])
-                )
+                columns, values = self._serialize(value)
+                cmd = f"UPDATE {self.table_name} SET {", ".join([col + ' = ?' for col in columns])} WHERE id = ?"
+                self.cursor.execute(cmd,
+                                    values + [row[0]]
+                                    )
                 self.conn.commit()
 
     def __delitem__(self, key: Union[int, slice]) -> None:
@@ -285,24 +334,24 @@ class Database:
                 )
                 self.conn.commit()
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: Game) -> bool:
         """Проверка наличия элемента."""
         for elem in self:
             if elem == item:
                 return True
         return False
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[Game]:
         """Итератор по элементам."""
-        self.cursor.execute(f"SELECT data, type FROM {self.table_name} ORDER BY id")
+        self.cursor.execute(f"SELECT * FROM {self.table_name} ORDER BY id")
         for row in self.cursor.fetchall():
-            yield self._deserialize(row[0], row[1])
+            yield self._deserialize(row)
 
-    def __reversed__(self) -> Iterator[Any]:
+    def __reversed__(self) -> Iterator[Game]:
         """Обратный итератор."""
-        self.cursor.execute(f"SELECT data, type FROM {self.table_name} ORDER BY id DESC")
+        self.cursor.execute(f"SELECT * FROM {self.table_name} ORDER BY id DESC")
         for row in self.cursor.fetchall():
-            yield self._deserialize(row[0], row[1])
+            yield self._deserialize(row)
 
     def __add__(self, other) -> list:
         """Конкатенация с другим итерируемым объектом."""
@@ -353,51 +402,20 @@ class Database:
         self.close()
 
 
-# Примеры использования
 if __name__ == "__main__":
-    # Создание БД в памяти
-    db = Database()
-
-    # Добавление элементов
-    db.append(1)
-    db.append("hello")
-    db.append([1, 2, 3])
-    db.append({"key": "value"})
-    print(f"После append: {db}")
-
-    # Индексация
-    print(f"db[0] = {db[0]}")
-    print(f"db[-1] = {db[-1]}")
-
-    # Срезы
-    print(f"db[1:3] = {db[1:3]}")
-
-    # Изменение элемента
-    db[1] = "world"
-    print(f"После db[1] = 'world': {db}")
-
-    # Вставка
-    db.insert(1, "inserted")
-    print(f"После insert(1, 'inserted'): {db}")
-
-    # Удаление
-    db.remove("inserted")
-    print(f"После remove('inserted'): {db}")
-
-    # Pop
-    last = db.pop()
-    print(f"После pop(): {db}, удален: {last}")
-
-    # Проверка наличия
-    print(f"1 in db: {1 in db}")
-
-    # Итерация
-    print("Итерация:")
-    for item in db:
-        print(f"  {item}")
-
-    # Работа с файловой БД
-    with Database("test.db") as file_db:
-        file_db.extend([1, 2, 3, 4, 5])
-        file_db.reverse()
-        print(f"Файловая БД после reverse: {file_db}")
+    db = Database(Game)
+    id_ = db.append(
+        Game(
+            id=0,
+            players=[None, None],
+            use_time=False,
+            left_time=[60, 60],
+            time_addition=10,
+            last_move_time=-1,
+        )
+    )
+    obj = db[id_]
+    print(obj)
+    obj.players = [0, 0]
+    db[id_] = obj
+    print(db[id_])
