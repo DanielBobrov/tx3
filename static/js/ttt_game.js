@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('connect', () => {
         console.log('Socket.IO connected!');
+        console.log(init);
         socket.emit('join', {game_id: init.gameId});
     });
 
@@ -64,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // }
 
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.board) {
-            board.setState(state.board, state.pgn);
+        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.grid) {
+            board.setState(state.grid, state.pgn);
         } else {
             console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
         }

@@ -83,7 +83,7 @@
     <script>
         None = null;
         window.INIT = {
-            gameId: "{{ game.game_id if game else '' }}",
+            gameId: "{{ game.id if game else '' }}",
             // 81 символ ('.', 'X', 'O'), либо сервер подставит свое
             initialGrid: {{ game.grid | safe }},
             // Активный мини‑квадрат (0..8) или -1 если можно ходить в любой

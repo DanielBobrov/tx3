@@ -23,7 +23,7 @@
                     <div></div>
                 </div>
                 {% for game in last_games or [] %}
-                    <a href="/game/{{ game.game_id }}" class="tr btn ghost">
+                    <a href="/game/{{ game.id }}" class="tr btn ghost">
                         {{ render_player_button(game.players[game.winner], players) }}
                         {{ render_player_button(game.players[0], players) }}
                         {{ render_player_button(game.players[1], players) }}
