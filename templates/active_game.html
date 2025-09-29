@@ -59,8 +59,9 @@
                 <div class="moves-nav">
                     <div></div>
                     <button class="btn"
-                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}">Copy
-                        position
+                            id="copyPositionBtn"
+{#                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}"#}
+                    >Copy position
                     </button>
                     <div></div>
                     <button id="navFirst" title="В начало">
@@ -117,7 +118,7 @@
 
 {% block scripts %}
     <script src="/static/js/socket.io.js"></script>
-    <script src="/js/board.js"></script>
+    <script src="/static/js/board.js"></script>
     <script src="/static/js/timer.js"></script>
     <script src="/static/js/moves_history.js"></script>
     {% if spectator %}
@@ -140,7 +141,7 @@
                 me: {{ player.id if player else 'null' }}
             };
         </script>
-        <script src="/js/game.js"></script>
+        <script src="/static/js/game.js"></script>
         {% if game.players[0] == player.id %}
             <script>swapPlayers()</script>
         {% endif %}

@@ -28,10 +28,10 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
 #         session["version"] = app.config["SESSION_VERSION"]
 
 
-games: Database[Game] = Database(Game, "games_test_new.db", "games")
+games: Database[Game] = Database(Game, "games.db", "games")
 active_games = games
 timers: dict[int: ExtendableTimer] = {}
-players: Database[Player] = Database(Player, "players_test_new.db", "players")
+players: Database[Player] = Database(Player, "players.db", "players")
 
 
 def create_game(player_0: int, player_piece: str, use_time: bool = False, duration: int = 0,
@@ -338,7 +338,7 @@ def on_get_signup_fn():
 @auth_player
 def on_post_signup_fn():
     username: str = request.json.get("username")
-    if not players.get_by("username", username):
+    if players.get_by("username", username):
         return {"error": "username_taken"}, 401
     if len(username) > 30 or len(username) < 3:
         return {"error": "username is invalid"}, 401
@@ -421,4 +421,4 @@ def on_game_fn(game_id: int):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=3000, debug=True)

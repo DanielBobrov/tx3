@@ -1,5 +1,5 @@
 // moves_history.js
-class MoveNavigator {
+class MovesHistoryManager {
     constructor(board) {
         this.board = board;
         this.moves = [];
@@ -258,4 +258,4 @@ class MoveNavigator {
 }
 
 // Экспортируем для использования в game.js
-window.MoveNavigator = MoveNavigator;
+window.MovesHistoryManager = MovesHistoryManager;

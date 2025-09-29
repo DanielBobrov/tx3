@@ -10,6 +10,11 @@
             this.map();
             this.setActiveMini(this.activeMini);
             this.attach();
+            document.getElementById("copyPositionBtn").addEventListener("click", () => {
+                navigator.clipboard.writeText(this.getFen()).then(r => {
+                    console.log(r);
+                });
+            })
         }
 
         map() {
@@ -19,6 +24,29 @@
                 const r = +cell.dataset.row, c = +cell.dataset.col;
                 this.cellMap[`${r}-${c}`] = cell;
             });
+        }
+
+        getFen() {
+            console.log("GRID", this.grid);
+            let status = document.getElementById('gameStatus').textContent;
+            let nextMark = status[status.length - 1];
+            let lastMove = this.pgn[this.pgn.length-1];
+            let fen = nextMark === 'X' ? '0' : '1' + lastMove;
+            console.log(fen);
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    let curMark = this.grid[i][j];
+                    if (curMark === null) {
+                        curMark = "0";
+                    } else if (curMark === "X") {
+                        curMark = "1";
+                    } else {
+                        curMark = "2";
+                    }
+                    fen += curMark;
+                }
+            }
+            return fen;
         }
 
         getCell(r, c) {
@@ -83,6 +111,8 @@
                     }
                 }
             }
+            this.grid = grid;
+            this.pgn = pgn;
 
             let cellIndex = pgn[pgn.length - 1];
             let _pgn = "4" + pgn;

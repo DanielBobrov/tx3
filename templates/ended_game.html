@@ -52,8 +52,9 @@
                 <div class="moves-nav">
                     <div></div>
                     <button class="btn"
-                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}console.log(window.INIT.fen);}">
-                        Copy position
+                            id="copyPositionBtn"
+{#                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}"#}
+                    >Copy position
                     </button>
                     <div></div>
                     <button id="navFirst" title="В начало">
@@ -99,7 +100,7 @@
         };
     </script>
     <script src="/static/js/socket.io.js"></script>
-    <script src="/js/board.js"></script>
+    <script src="/static/js/board.js"></script>
     <script src="/static/js/timer.js"></script>
     <script src="/static/js/moves_history.js"></script>
     {#    <script src="/static/js/game.js"></script>#}
@@ -107,10 +108,11 @@
         const board = new Board('#Board', {
             activeMini: -1,
         });
+        window.board = board;
         board.setState({{ game.grid | safe }}, "{{ game.pgn }}");
         board.setActiveMini(-1);
-        moveNavigator = new MoveNavigator(board, null);
-        moveNavigator.setMoves({{ game.pgn }});
+        movesHistoryManager = new MovesHistoryManager(board, null);
+        movesHistoryManager.setMoves("{{ game.pgn }}");
 
 
         {% if game.use_time %}

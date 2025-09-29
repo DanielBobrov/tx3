@@ -1,15 +1,3 @@
-function grid2fen(board) {
-    let status = document.getElementById('gameStatus').textContent;
-    let nextMark = status[status.length-1];
-    let fen = nextMark === 'X' ? '0' : '1';
-    for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-            fen += grid[i][j] === 'X' ? '0' : '1';
-        }
-    }
-    return fen;
-}
-
 function fen2grid(fen) {
     let curMark = null;
     let mark = fen[0] === '0' ? 'X' : 'O';
