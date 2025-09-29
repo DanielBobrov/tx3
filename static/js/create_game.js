@@ -32,6 +32,7 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
     event.preventDefault();
 
     const useTimer = document.getElementById('useTimer').checked;
+    const useRandomStart = document.getElementById('randomStart').checked;
     const pieceSelection = document.querySelector('input[name="piece"]:checked').value;
 
     // Определяем, какую фигуру выбрал игрок
@@ -43,7 +44,8 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
     // Подготавливаем данные для отправки
     const gameData = {
         player_piece: playerPiece,
-        use_time: useTimer
+        use_time: useTimer,
+        use_random_start: useRandomStart
     };
 
     // Добавляем настройки времени только если таймер включен

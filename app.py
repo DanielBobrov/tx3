@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+import random
 from functools import wraps
 
 import dotenv
@@ -13,7 +13,7 @@ from utils import *
 dotenv.load_dotenv()
 app = flask.Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
-app.config["SESSION_VERSION"] = datetime.now().timestamp()
+app.config["SESSION_VERSION"] = datetime.datetime.now().timestamp()
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
 socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
@@ -35,7 +35,7 @@ players: Database[Player] = Database(Player, "players_test_new.db", "players")
 
 
 def create_game(player_0: int, player_piece: str, use_time: bool = False, duration: int = 0,
-                addition: int = 0, ) -> Game:
+                addition: int = 0, random_start=False) -> Game:
     game_players = [None, None]
     game_players[player_piece == "O"] = player_0
     game = Game(
@@ -46,10 +46,45 @@ def create_game(player_0: int, player_piece: str, use_time: bool = False, durati
         time_addition=addition,
         last_move_time=-1,
     )
+    if random_start:
+        grid = generate_random_start_position()
+        game.grid = grid
     game_id = games.append(game)
     game.id = game_id
     games[game_id] = game
     return game
+
+
+def generate_random_start_position():
+    # Создаем массив 9x9 заполненный нулями
+    board = [[None for _ in range(9)] for _ in range(9)]
+
+    # Проходим по каждому квадрату 3x3
+    for block_row in range(3):
+        for block_col in range(3):
+            # Определяем начальные координаты квадрата
+            start_row = block_row * 3
+            start_col = block_col * 3
+
+            # Генерируем случайные позиции для 1 и 2 внутри квадрата
+            positions = list(range(9))  # 0-8 для 9 клеток в квадрате
+            random.shuffle(positions)
+
+            # Берем первые две позиции
+            pos1 = positions[0]
+            pos2 = positions[1]
+
+            # Преобразуем линейную позицию в координаты внутри квадрата
+            row1, col1 = pos1 // 3, pos1 % 3
+            row2, col2 = pos2 // 3, pos2 % 3
+
+            # Размещаем 1 и 2
+            board[start_row + row1][start_col + col1] = "X"
+            board[start_row + row2][start_col + col2] = "O"
+
+    print("generated random start position:", board)
+
+    return board
 
 
 def auth_player(function):
@@ -221,7 +256,7 @@ def on_move_fn(data):
         return {"error": 400}
 
     if game.use_time:
-        cur_time = datetime.now()
+        cur_time = datetime.datetime.now()
 
         timer: ExtendableTimer = timers[game_id]
         timer.cancel()
@@ -327,6 +362,7 @@ def on_create_game_fn():
         duration=request.json.get("duration", 0),
         addition=request.json.get("addition", 0),
         player_piece=request.json.get("player_piece"),
+        random_start=request.json.get("use_random_start"),
     )
     player.games.append(game.id)
     players[player_id] = player
@@ -370,7 +406,7 @@ def on_game_fn(game_id: int):
 
         game.status = ACTIVE
         games[game_id] = game
-        game.last_move_time = datetime.now()
+        game.last_move_time = datetime.datetime.now()
 
         if game.use_time:
             timers[game_id] = ExtendableTimer(game.left_time[0], lose_by_time, args=[game, 0])

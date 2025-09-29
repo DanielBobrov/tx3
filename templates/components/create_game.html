@@ -12,7 +12,6 @@
             <!-- Переключатель режима игры -->
             <div class="form-group">
                 <label class="switch-label">Игра на время
-
                     <input type="checkbox" id="useTimer" class="switch-input" checked=""
                            onchange="toggleTimerSettings()">
                     <span class="switch-slider"></span>
@@ -30,6 +29,14 @@
                     <span class="moveAdditionValue">5</span>
                 </label>
                 <input class="range" type="range" id="moveAddition" min="0" max="60" value="5" oninput="showVal(this)">
+            </div>
+
+            <!-- Переключатель случайного начала игры -->
+            <div class="form-group">
+                <label class="switch-label">Случайная начальная расстановка
+                    <input type="checkbox" id="randomStart" class="switch-input">
+                    <span class="switch-slider"></span>
+                </label>
             </div>
 
             <div class="form-group">
