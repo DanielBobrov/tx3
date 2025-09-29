@@ -21,7 +21,6 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
                     #     engineio_logger=True  # детальные логи
                     )
 
-
 # @app.before_request
 # def check_session_version():
 #     if "version" not in session or session["version"] != app.config["SESSION_VERSION"]:
@@ -257,6 +256,12 @@ def home():
     return render_template("index.html", last_games=last_games, player=players[session.get("player_id")])
 
 
+@app.route("/analysis")
+@auth_player
+def analysis():
+    return render_template("analysis.html", game=games[-3], player=players[session.get("player_id")])
+
+
 @app.route("/all_games")
 @auth_player
 def on_all_games_fn():
@@ -298,7 +303,7 @@ def on_get_signup_fn():
 @auth_player
 def on_post_signup_fn():
     username: str = request.json.get("username")
-    if not players[username]:
+    if not players.get_by("username", username):
         return {"error": "username_taken"}, 401
     if len(username) > 30 or len(username) < 3:
         return {"error": "username is invalid"}, 401
