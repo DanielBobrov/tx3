@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const board = new Board('#Board', {});
     window.board = board;
-    let moveNavigator = new MoveNavigator(board);
+    let movesHistoryManager = new MovesHistoryManager(board);
 
     if (init.initialGrid) {
         board.setState(init.initialGrid);
@@ -30,16 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.lastGameState = state;
 
         // Обновляем историю ходов
-        if (state.pgn && moveNavigator) {
-            moveNavigator.setMoves(state.pgn);
+        if (state.pgn && movesHistoryManager) {
+            movesHistoryManager.setMoves(state.pgn);
         }
 
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.board) {
+        if (!(movesHistoryManager && movesHistoryManager.isViewingHistory) && state.board) {
             board.setState(state.board, state.pgn);
             board.setActiveMini(-2);
         } else {
-            console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
+            console.log("DON't UPDATE BOARD", movesHistoryManager.isViewingHistory);
         }
 
         // Обновляем статус игры (кто ходит, игра окончена и т.д.)

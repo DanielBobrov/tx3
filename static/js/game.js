@@ -24,7 +24,7 @@ function fen2grid(fen) {
 document.addEventListener('DOMContentLoaded', () => {
     const init = window.INIT || {};
     var last_timer = () => null;
-    let moveNavigator = null;
+    let movesHistoryManager = null;
 
     const socket = io();
     window.GAME_SOCKET = socket; // Для удобства отладки в консоли
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     window.board = board;
-    moveNavigator = new MovesHistoryManager(board);
+    movesHistoryManager = new MovesHistoryManager(board);
 
     if (init.initialGrid) board.setState(init.initialGrid, init.initialPgn);
 
@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.lastGameState = state;
 
         // Обновляем историю ходов
-        if (state.pgn && moveNavigator) {
-            moveNavigator.setMoves(state.pgn);
+        if (state.pgn && movesHistoryManager) {
+            movesHistoryManager.setMoves(state.pgn);
         }
 
         // if (state.fen) {
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // }
 
         // // Если мы просматриваем историю, не обновляем доску автоматически
-        // if (moveNavigator && moveNavigator.isViewingHistory) {
+        // if (movesHistoryManager && movesHistoryManager.isViewingHistory) {
         //     return;
         // }
         let cur_state = fen2grid(state.fen)
@@ -95,10 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(grid);
 
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && grid) {
+        if (!(movesHistoryManager && movesHistoryManager.isViewingHistory) && grid) {
             board.setState(grid, state.pgn);
         } else {
-            console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
+            console.log("DON't UPDATE BOARD", movesHistoryManager.isViewingHistory);
         }
 
         console.log("ACTIVE MINI", activeMini);
