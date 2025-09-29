@@ -340,12 +340,15 @@ def on_post_signup_fn():
     username: str = request.json.get("username")
     if players.get_by("username", username):
         return {"error": "username_taken"}, 401
-    if len(username) > 30 or len(username) < 3:
+    if not isinstance(username, str) or len(username) > 30 or len(username) < 3:
         return {"error": "username is invalid"}, 401
+    password: str = request.json.get("password")
+    if not isinstance(password, str) or len(password) > 30 or len(password) < 3:
+        return {"error": "password is invalid"}, 401
     for i in username:
-        if i.isspace():
+        if i.isspace() or i == "ㅤ":
             return {"error": "username is invalid"}, 401
-    player = Player(username=request.json.get("username"), password=request.json.get("password"),
+    player = Player(username=request.json.get("username"), password=password,
                     id=session.get("player_id"))
     players[session.get("player_id")] = player
     return "200"
