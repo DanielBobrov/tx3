@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% from "components/board.html" import render_board %}
+{% from "components/macros.html" import render_player_username %}
+{% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="/static/css/game.css">
+    <section class="game-layout">
+        <div class="board-col">
+            <div class="player top">
+                <div class="user">
+                    X: {{ render_player_username(game.players[0], players) }}
+                    {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
+                </div>
+                {% if game.use_time %}
+                    <div class="time">
+                        {% if game.players[1] == player.id %}
+                            <div class="btn" id="addTimeBtn">+</div>
+                        {% endif %}
+                        <div class="clock" id="clockX">-:-.-</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="board-wrap">
+                {{ render_board('Board') }}
+            </div>
+
+            <div class="player bottom">
+                <div class="user">
+                    O: {{ render_player_username(game.players[1], players) }}
+                    {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
+                </div>
+                {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
+                {% if game.use_time %}
+                    <div class="time">
+                        {% if game.players[0] == player.id %}
+                            <div class="btn" id="addTimeBtn">+</div>
+                        {% endif %}
+                        <div class="clock" id="clockO">-:-.-</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {#            <div class="game-controls">#}
+            {#                <button class="btn" id="btnOfferDraw">Предложить ничью</button>#}
+            {#                <button class="btn ghost" id="btnResign">Сдаться</button>#}
+            {#                <button class="btn" id="btnRematch">Реванш</button>#}
+            {#            </div>#}
+        </div>
+
+        <aside class="side-col">
+            <div class="panel moves">
+                <div class="panel-head">
+                    <h3>Ходы</h3>
+                    <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
+                </div>
+                <div class="moves-list" id="movesList"></div>
+                <div class="navigation-controls"></div>
+                <div class="moves-nav">
+                    <div></div>
+                    <button class="btn"
+                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}">Copy
+                        position
+                    </button>
+                    <div></div>
+                    <button id="navFirst" title="В начало">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
+                        </svg>
+                    </button>
+                    <button id="navPrev" title="Предыдущий ход">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+                        </svg>
+                    </button>
+                    <button id="navNext" title="Следующий ход">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
+                        </svg>
+                    </button>
+                    <button id="navLast" title="В конец">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
+                        </svg>
+                    </button>
+                    <div></div>
+                    {% if spectator %}
+                        <div></div>{% else %}
+                        <button class="btn" id="insert-position-btn">Insert position</button>{% endif %}
+                    <div></div>
+                </div>
+                <div class="viewing-indicator" id="viewingIndicator" style="display: none !important;">
+                    Просмотр хода <span id="viewingMoveNum"></span>
+                </div>
+            </div>
+        </aside>
+        {#        <aside class="side-col">#}
+        {#            <div class="panel moves">#}
+        {#                <div class="panel-head">#}
+        {#                    <h3>Ходы</h3>#}
+        {#                    <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>#}
+        {#                </div>#}
+        {#                <ol class="moves-list" id="movesList"></ol>#}
+        {#            </div>#}
+        {##}
+        {#    <div class="panel chat">#}
+        {#      <div class="panel-head"><h3>Чат</h3></div>#}
+        {#      <div class="chat-log" id="chatLog"></div>#}
+        {#      <div class="chat-input">#}
+        {#        <input type="text" id="chatMsg" placeholder="Сообщение...">#}
+        {#        <button class="btn small" id="chatSend">Отправить</button>#}
+        {#      </div>#}
+        {#    </div>#}
+        {#        </aside>#}
+    </section>
+{% endblock %}
+
+{% block scripts %}
+{#    <script src="/static/js/moves_history.js"></script>#}
+    <script src="/static/js/analysis.js"></script>
+    <script>
+        None = null;
+        window.INIT = {
+            myMark: "X",
+            fen: "{{ "0"*82 }}",
+            initialPgn: "",
+            activeMini: 4,
+        };
+    </script>
+{% endblock %}
