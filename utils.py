@@ -1,4 +1,5 @@
 import dataclasses
+import datetime
 import threading
 import time
 from dataclasses import dataclass
@@ -17,9 +18,9 @@ class Game:
     left_time: Optional[List[float]] = None
     time_addition: int = 0
     use_time: bool = False
-    last_move_time: Optional[int] = None
+    last_move_time: Optional[datetime.datetime] = None
     winner: Optional[str] = None
-    fen: str = "0" * 81
+    fen: str = "04" + "0" * 81
 
     def add_step(self, step):
         self.pgn += str(step)
@@ -29,12 +30,12 @@ class Game:
         grid = [[None for __ in range(9)] for _ in range(9)]
         for i in range(9):
             for j in range(9):
-                mark = self.fen[i * 9 + j]
+                mark = self.fen[i * 9 + j + 2]
                 grid[i][j] = None if mark == "0" else "X" if mark == "1" else "O"
         return grid
 
     def __set_grid(self, grid):
-        fen = ""
+        fen = str(self.step) + str(self.active_mini)
         for i in range(9):
             for j in range(9):
                 fen += "0" if grid[i][j] is None else "1" if grid[i][j] == "X" else "2"
@@ -52,9 +53,9 @@ class Game:
     def get_state_for_client(self):
         """Возвращает словарь с состоянием игры для отправки клиенту."""
         return {
-            "grid": self.grid,
             "status": self.status,
             "pgn": self.pgn,
+            "fen": self.fen,
             "step": self.step,
             "players": self.players,
             "winner": self.winner,

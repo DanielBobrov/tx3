@@ -1,3 +1,38 @@
+function grid2fen(board) {
+    let status = document.getElementById('gameStatus').textContent;
+    let nextMark = status[status.length-1];
+    let fen = nextMark === 'X' ? '0' : '1';
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            fen += grid[i][j] === 'X' ? '0' : '1';
+        }
+    }
+    return fen;
+}
+
+function fen2grid(fen) {
+    let curMark = null;
+    let mark = fen[0] === '0' ? 'X' : 'O';
+    let activeMini = parseInt(fen[1]);
+    let grid = [];
+    for (let i = 0; i < 9; i++) {
+        grid.push([]);
+        for (let j = 0; j < 9; j++) {
+            curMark = fen[9 * i + j + 2]
+            if (curMark === "0") {
+                curMark = null;
+            } else if (curMark === "1") {
+                curMark = "X";
+            } else {
+                curMark = "O";
+            }
+            grid[i].push(curMark);
+        }
+    }
+    return [mark, activeMini, grid];
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const init = window.INIT || {};
     var last_timer = () => null;
@@ -25,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     window.board = board;
-    moveNavigator = new MoveNavigator(board);
+    moveNavigator = new MovesHistoryManager(board);
 
     if (init.initialGrid) board.setState(init.initialGrid, init.initialPgn);
 
@@ -59,32 +94,39 @@ document.addEventListener('DOMContentLoaded', () => {
             moveNavigator.setMoves(state.pgn);
         }
 
+        // if (state.fen) {
+        //     window.INIT.fen = state.fen;
+        // }
+
         // // Если мы просматриваем историю, не обновляем доску автоматически
         // if (moveNavigator && moveNavigator.isViewingHistory) {
         //     return;
         // }
+        let cur_state = fen2grid(state.fen)
+        let nextMark = cur_state[0], activeMini = cur_state[1], grid = cur_state[2];
+        console.log(grid);
 
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.grid) {
-            board.setState(state.grid, state.pgn);
+        if (!(moveNavigator && moveNavigator.isViewingHistory) && grid) {
+            board.setState(grid, state.pgn);
         } else {
             console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
         }
 
+        console.log("ACTIVE MINI", activeMini);
+        console.log("NEXT MARK", fen2grid(state.fen));
+
         // Обновляем статус игры (кто ходит, игра окончена и т.д.)
-        const nextMark = state.step === 0 ? 'X' : 'O';
+        // const nextMark = state.step === 0 ? 'X' : 'O';
         if (state.status) {
             console.log("state.status = ", state.status);
             let statusText = '';
             if (state.status === 'active') {
                 statusText = `Ход игрока: ${nextMark}`;
-                console.log("state", state);
                 if (nextMark !== init.myMark) {
-                    console.log("nextMark = ", nextMark);
-                    console.log("init.myMark = ", init.myMark);
                     board.setActiveMini(-2);
                 } else {
-                    board.setActiveMini(state.active_mini);
+                    board.setActiveMini(activeMini);
                 }
             } else if (state.status === 'ended') {
                 window.location.reload();
