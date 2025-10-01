@@ -56,11 +56,11 @@ main { flex: 1 0 auto; }
 .footer { border-top: 1px solid var(--border-color-main);}
 .footer-inner { padding: 20px 0; display:flex; justify-content: space-between; align-items:center; }
 
-.btn { background: var(--bg-btn); color:var(--text); border:1px solid var(--border-color-light); padding:8px 12px; border-radius:8px; cursor:pointer; text-decoration: none; text-align: center;}
+.btn { background: var(--bg-btn); color:var(--text); border:1px solid var(--border-color-light); padding:8px 12px; border-radius:8px; cursor:pointer; text-decoration: none; text-align: center; user-select: none;}
 .btn:hover { border-color: var(--border-active-color); }
 .btn.primary { background: var(--accent); color:#100d0a; border-color: transparent; }
 .btn.ghost { background: transparent; border-color: var(--border-active-color); }
-.tr .ghost .btn {text-overflow: ellipsis;overflow: hidden;}
+.tr.ghost.btn .btn {text-overflow: ellipsis;overflow: hidden;}
 .btn.small { padding:6px 10px; font-size: 14px; }
 .btn.danger { background: var(--danger); color: white; border-color: transparent; }
 .link { color: #d7ad70; text-decoration: none; font-size: 14px; }

@@ -361,8 +361,8 @@ def on_create_game_fn():
     game = create_game(
         player_0=player_id,
         use_time=request.json.get("use_time"),
-        duration=request.json.get("duration", 0),
-        addition=request.json.get("addition", 0),
+        duration=max(0, request.json.get("duration", 0)),
+        addition=max(0, request.json.get("addition", 0)),
         player_piece=request.json.get("player_piece"),
         random_start=request.json.get("use_random_start"),
     )
