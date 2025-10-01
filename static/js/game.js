@@ -114,6 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nextMark !== init.myMark) {
                     board.setActiveMini(-2);
                 } else {
+                    if (window.notificationsManager) {
+                        window.notificationsManager.moveNotification(
+                            document.getElementById(`username${state.step === 1 ? 'X' : 'O'}`).textContent
+                        );
+                    }
                     board.setActiveMini(activeMini);
                 }
             } else if (state.status === 'ended') {

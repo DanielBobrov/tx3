@@ -9,7 +9,8 @@
         <div class="board-col">
             <div class="player top">
                 <div class="user">
-                    X: {{ render_player_username(game.players[0], players) }}
+                    X:
+                    <div id="usernameX">{{ render_player_username(game.players[0], players) }}</div>
                     {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
                 </div>
                 {% if game.use_time %}
@@ -28,7 +29,8 @@
 
             <div class="player bottom">
                 <div class="user">
-                    O: {{ render_player_username(game.players[1], players) }}
+                    O:
+                    <div id="usernameO">{{ render_player_username(game.players[0], players) }}</div>
                     {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
                 </div>
                 {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
@@ -121,6 +123,7 @@
     <script src="/static/js/board.js"></script>
     <script src="/static/js/timer.js"></script>
     <script src="/static/js/moves_history.js"></script>
+    <script src="/static/js/notifications.js"></script>
     {% if spectator %}
         <script src="/static/js/spectator.js"></script>
         <script>

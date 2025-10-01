@@ -16,7 +16,7 @@ app.secret_key = os.getenv('SECRET_KEY')
 app.config["SESSION_VERSION"] = datetime.datetime.now().timestamp()
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
-socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
+socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet", cors_allowed_origins="*",
                     # logger=True,          # для отладки
                     #     engineio_logger=True  # детальные логи
                     )
@@ -169,7 +169,6 @@ def inject_variables():
 def on_add_time(data):
     game_id = data.get("game_id")
     player_id = data.get("player_id")
-    print(1)
     if player_id != session.get("player_id"):
         return {"error": 401}
     if timers.get(game_id) is None:
