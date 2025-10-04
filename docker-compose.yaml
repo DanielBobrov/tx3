@@ -1,0 +1,16 @@
+services:   
+  backend:
+    env_file: .env
+    build: ./.
+    volumes:
+      - type: bind
+        source: 'games_test_new.db'
+        target: 'games_test_new.db'
+        
+      - type: bind
+        source: 'players_test_new.db'
+        target: 'players_test_new.db'
+    ports:
+      - '5000:5000'
+    restart: always
+    
