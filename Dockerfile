@@ -1,7 +1,7 @@
 FROM python:bookworm
 
 RUN apt update 
-RUN apt upgrade
+RUN apt upgrade -y 
 
 WORKDIR /app
 
