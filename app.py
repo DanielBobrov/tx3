@@ -100,6 +100,33 @@ def auth_player(function):
     return wrapper
 
 
+def validator(schema):
+    def decorator(function):
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            data = request.json if request.method == "POST" else args[0] if args else {}
+
+            if data.keys() != schema.keys():
+                print("invalid request: invalid keys")
+                print("GET:", data.keys(), "\tVALID:", schema.keys())
+                return {"error": "invalid_request"}, 400
+            for i in data.keys():
+                try:
+                    if not schema[i](data[i]):
+                        print("invalid request")
+                        print("GET:", data[i], "\tKEY:", i, "\tVALID:", schema[i])
+                        return {"error": "invalid_request"}, 400
+                except:
+                    return {"error": "invalid_request"}, 400
+
+            return function(*args, **kwargs)
+
+        return wrapper
+    return decorator
+
+def positive(x):
+    return isinstance(x, int) and x >= 0
+
 def desk_is_full(desk):
     for i in range(3):
         for j in range(3):
@@ -165,6 +192,7 @@ def inject_variables():
 
 
 @socketio.on("add_time")
+@validator({"game_id": positive, "player_id": positive})
 @auth_player
 def on_add_time(data):
     game_id = data.get("game_id")
@@ -189,6 +217,7 @@ def on_add_time(data):
 
 
 @socketio.on("join")
+@validator({"game_id": positive})
 @auth_player
 def on_join(data):
     """Клиент присоединяется к комнате игры."""
@@ -211,6 +240,7 @@ def validate_move(game: Game, move):
 
 
 @socketio.on("resign")
+@validator({"game_id": positive, "player_id": positive})
 @auth_player
 def on_resign_fn(data):
     player_id = data.get("player_id")
@@ -226,6 +256,7 @@ def on_resign_fn(data):
 
 
 @socketio.on("move")
+@validator({"game_id": positive, "row": positive, "col": positive})
 @auth_player
 def on_move_fn(data):
     """Обработка хода, полученного через WebSocket."""
@@ -282,6 +313,7 @@ def on_move_fn(data):
 
 
 @app.route("/")
+@validator({})
 @auth_player
 def home():
     last_games = list(games)[::-1]
@@ -291,12 +323,14 @@ def home():
 
 
 @app.route("/analysis")
+@validator({})
 @auth_player
 def analysis():
     return render_template("analysis.html", game=games[-3], player=players[session.get("player_id")])
 
 
 @app.route("/all_games")
+@validator({})
 @auth_player
 def on_all_games_fn():
     last_games = games[::-1]
@@ -304,6 +338,7 @@ def on_all_games_fn():
 
 
 @app.route("/logout", methods=["GET"])
+@validator({})
 @auth_player
 def on_get_logout_fn():
     session["player_id"] = None
@@ -311,12 +346,14 @@ def on_get_logout_fn():
 
 
 @app.route("/login", methods=["GET"])
+@validator({})
 @auth_player
 def on_get_login_fn():
     return render_template("login.html")
 
 
 @app.route("/login", methods=["POST"])
+@validator({"username": str, "password": str})
 @auth_player
 def on_post_login_fn():
     player = players.get_by("username", request.json.get("username"))[0]
@@ -328,12 +365,14 @@ def on_post_login_fn():
 
 
 @app.route("/signup", methods=["GET"])
+@validator({})
 @auth_player
 def on_get_signup_fn():
     return render_template("login.html", registration=True)
 
 
 @app.route("/signup", methods=["POST"])
+@validator({"username": str, "password": str})
 @auth_player
 def on_post_signup_fn():
     username: str = request.json.get("username")
@@ -341,12 +380,15 @@ def on_post_signup_fn():
         return {"error": "username_taken"}, 401
     if not isinstance(username, str) or len(username) > 30 or len(username) < 3:
         return {"error": "username is invalid"}, 401
+
     password: str = request.json.get("password")
     if not isinstance(password, str) or len(password) > 30 or len(password) < 3:
         return {"error": "password is invalid"}, 401
+
     for i in username:
         if i.isspace() or i == "ㅤ":
             return {"error": "username is invalid"}, 401
+
     player = Player(username=request.json.get("username"), password=password,
                     id=session.get("player_id"))
     players[session.get("player_id")] = player
@@ -354,6 +396,13 @@ def on_post_signup_fn():
 
 
 @app.route("/create_game", methods=["POST"])
+@validator({
+    "use_time": lambda x: isinstance(x, bool),
+    "duration": positive,
+    "addition": positive,
+    "player_piece": lambda x: x in ["X", "O"],
+    "use_random_start": lambda x: isinstance(x, bool)
+})
 @auth_player
 def on_create_game_fn():
     player_id = session.get("player_id")
@@ -372,6 +421,7 @@ def on_create_game_fn():
 
 
 @app.route("/game/<int:game_id>", methods=["GET"])
+@validator({})
 @auth_player
 def on_game_fn(game_id: int):
     try:

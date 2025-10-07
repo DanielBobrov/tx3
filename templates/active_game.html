@@ -128,7 +128,7 @@
         <script src="/static/js/spectator.js"></script>
         <script>
             window.INIT = {
-                gameId: "{{ game.id if game else '' }}",
+                gameId: {{ game.id if game else '' }},
             };
         </script>
     {% else %}
