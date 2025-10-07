@@ -1,4 +1,5 @@
 import os
+import random
 from functools import wraps
 
 import dotenv
@@ -12,14 +13,13 @@ from utils import *
 dotenv.load_dotenv()
 app = flask.Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
-app.config["SESSION_VERSION"] = datetime.now().timestamp()
+app.config["SESSION_VERSION"] = datetime.datetime.now().timestamp()
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
-socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
+socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet", cors_allowed_origins="*",
                     # logger=True,          # для отладки
                     #     engineio_logger=True  # детальные логи
                     )
-
 
 # @app.before_request
 # def check_session_version():
@@ -28,14 +28,14 @@ socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet",
 #         session["version"] = app.config["SESSION_VERSION"]
 
 
-games: Database[Game] = Database(Game, "games_test_new.db", "games")
+games: Database[Game] = Database(Game, "games.db", "games")
 active_games = games
-timers = {}
-players: Database[Player] = Database(Player, "players_test_new.db", "players")
+timers: dict[int: ExtendableTimer] = {}
+players: Database[Player] = Database(Player, "players.db", "players")
 
 
 def create_game(player_0: int, player_piece: str, use_time: bool = False, duration: int = 0,
-                addition: int = 0, ) -> Game:
+                addition: int = 0, random_start=False) -> Game:
     game_players = [None, None]
     game_players[player_piece == "O"] = player_0
     game = Game(
@@ -46,10 +46,45 @@ def create_game(player_0: int, player_piece: str, use_time: bool = False, durati
         time_addition=addition,
         last_move_time=-1,
     )
+    if random_start:
+        grid = generate_random_start_position()
+        game.grid = grid
     game_id = games.append(game)
     game.id = game_id
     games[game_id] = game
     return game
+
+
+def generate_random_start_position():
+    # Создаем массив 9x9 заполненный нулями
+    board = [[None for _ in range(9)] for _ in range(9)]
+
+    # Проходим по каждому квадрату 3x3
+    for block_row in range(3):
+        for block_col in range(3):
+            # Определяем начальные координаты квадрата
+            start_row = block_row * 3
+            start_col = block_col * 3
+
+            # Генерируем случайные позиции для 1 и 2 внутри квадрата
+            positions = list(range(9))  # 0-8 для 9 клеток в квадрате
+            random.shuffle(positions)
+
+            # Берем первые две позиции
+            pos1 = positions[0]
+            pos2 = positions[1]
+
+            # Преобразуем линейную позицию в координаты внутри квадрата
+            row1, col1 = pos1 // 3, pos1 % 3
+            row2, col2 = pos2 // 3, pos2 % 3
+
+            # Размещаем 1 и 2
+            board[start_row + row1][start_col + col1] = "X"
+            board[start_row + row2][start_col + col2] = "O"
+
+    print("generated random start position:", board)
+
+    return board
 
 
 def auth_player(function):
@@ -105,7 +140,7 @@ def broadcast_game_state(game_id: int):
     # print(f"Broadcasted game state: {game.get_state_for_client()}")
 
 
-def lose_game(game, loser_mark):
+def lose_game(game: Game, loser_mark):
     game.status = ENDED
     game.winner = (loser_mark + 1) % 2
     # del active_games[game.game_id]
@@ -134,7 +169,6 @@ def inject_variables():
 def on_add_time(data):
     game_id = data.get("game_id")
     player_id = data.get("player_id")
-    print(1)
     if player_id != session.get("player_id"):
         return {"error": 401}
     if timers.get(game_id) is None:
@@ -176,6 +210,21 @@ def validate_move(game: Game, move):
     return True
 
 
+@socketio.on("resign")
+@auth_player
+def on_resign_fn(data):
+    player_id = data.get("player_id")
+    if player_id != session.get("player_id"):
+        return {"error": 403}
+    game_id = data.get("game_id")
+    game = games[game_id]
+    if game is None:
+        return {"error": 403}
+    if player_id not in game.players:
+        return {"error": 403}
+    lose_game(game, player_id)
+
+
 @socketio.on("move")
 @auth_player
 def on_move_fn(data):
@@ -206,7 +255,7 @@ def on_move_fn(data):
         return {"error": 400}
 
     if game.use_time:
-        cur_time = datetime.now()
+        cur_time = datetime.datetime.now()
 
         timer: ExtendableTimer = timers[game_id]
         timer.cancel()
@@ -239,6 +288,12 @@ def home():
     if len(last_games) > 5:
         last_games = last_games[:5]
     return render_template("index.html", last_games=last_games, player=players[session.get("player_id")])
+
+
+@app.route("/analysis")
+@auth_player
+def analysis():
+    return render_template("analysis.html", game=games[-3], player=players[session.get("player_id")])
 
 
 @app.route("/all_games")
@@ -282,14 +337,17 @@ def on_get_signup_fn():
 @auth_player
 def on_post_signup_fn():
     username: str = request.json.get("username")
-    if not players[username]:
+    if players.get_by("username", username):
         return {"error": "username_taken"}, 401
-    if len(username) > 30 or len(username) < 3:
+    if not isinstance(username, str) or len(username) > 30 or len(username) < 3:
         return {"error": "username is invalid"}, 401
+    password: str = request.json.get("password")
+    if not isinstance(password, str) or len(password) > 30 or len(password) < 3:
+        return {"error": "password is invalid"}, 401
     for i in username:
-        if i.isspace():
+        if i.isspace() or i == "ㅤ":
             return {"error": "username is invalid"}, 401
-    player = Player(username=request.json.get("username"), password=request.json.get("password"),
+    player = Player(username=request.json.get("username"), password=password,
                     id=session.get("player_id"))
     players[session.get("player_id")] = player
     return "200"
@@ -303,9 +361,10 @@ def on_create_game_fn():
     game = create_game(
         player_0=player_id,
         use_time=request.json.get("use_time"),
-        duration=request.json.get("duration", 0),
-        addition=request.json.get("addition", 0),
+        duration=max(0, request.json.get("duration", 0)),
+        addition=max(0, request.json.get("addition", 0)),
         player_piece=request.json.get("player_piece"),
+        random_start=request.json.get("use_random_start"),
     )
     player.games.append(game.id)
     players[player_id] = player
@@ -334,7 +393,7 @@ def on_game_fn(game_id: int):
         return render_template("active_game.html", game=game, player=players[session.get("player_id")], spectator=True)
 
     if game.status == WAITING:
-        # Если это создатель игры, он ждет
+        # Если это создатель игры, то он ждет
         if is_player:
             return render_template("waiting_game.html", game=game, player=players[session.get("player_id")])
 
@@ -349,7 +408,7 @@ def on_game_fn(game_id: int):
 
         game.status = ACTIVE
         games[game_id] = game
-        game.last_move_time = datetime.now()
+        game.last_move_time = datetime.datetime.now()
 
         if game.use_time:
             timers[game_id] = ExtendableTimer(game.left_time[0], lose_by_time, args=[game, 0])

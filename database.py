@@ -1,6 +1,7 @@
-import typing
-from dataclasses import fields
-from typing import Type, Generic, TypeVar
+import pickle
+import sqlite3
+from dataclasses import fields, asdict
+from typing import Type, Generic, TypeVar, Union, Iterator, Any
 
 from utils import *
 
@@ -60,7 +61,7 @@ class Database(Generic[T]):
         ''')
         self.conn.commit()
 
-    def _serialize(self, item: T) -> tuple[list[str], list[str]]:
+    def _serialize(self, item: T) -> tuple[list[str, Any], list[str]]:
         """
         Сериализация объекта для хранения в БД.
 
@@ -174,7 +175,7 @@ class Database(Generic[T]):
         self.cursor.execute(f"DELETE FROM {self.table_name}")
         self.conn.commit()
 
-    def index(self, item: Game, start: int = 0, stop: Optional[int] = None) -> int:
+    def index(self, item: Game, start: int = 0, stop: Optional[int] = None) -> int | None:
         """Поиск индекса первого вхождения элемента."""
         stop = stop if stop is not None else len(self)
         for i in range(start, stop):

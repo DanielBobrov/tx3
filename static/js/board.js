@@ -1,139 +1,217 @@
-// Простой класс доски: FEN -> отрисовка, клики по клеткам, подсветки, onMove-хук
+// Ultimate Tic-Tac-Toe board: 9x9 (3x3 мини-доски по 3x3)
 (function () {
-  const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-  class ChessBoard {
-    constructor(root, opts = {}) {
-      this.el = typeof root === 'string' ? document.querySelector(root) : root;
-      if (!this.el) throw new Error('ChessBoard root not found');
-      this.orientation = opts.orientation || (this.el.getAttribute('data-orientation') || 'white');
-      this.onMove = opts.onMove || null; // async ({from,to,piece}) => { return true|false|{legal:boolean} }
-      this.selected = null;
-      this.mapSquares();
-      this.attachHandlers();
-    }
-
-    mapSquares() {
-      this.sq = {};
-      this.el.querySelectorAll('.square').forEach(s => {
-        this.sq[s.dataset.square] = s;
-      });
-    }
-
-    getPiece(square) {
-      const el = this.sq[square]?.querySelector('.piece');
-      return el?.dataset.piece || null;
-    }
-    setPiece(square, code) {
-      const el = this.sq[square]?.querySelector('.piece');
-      if (!el) return;
-      if (code) el.dataset.piece = code; else delete el.dataset.piece;
-    }
-
-    clear() {
-      Object.keys(this.sq).forEach(sq => this.setPiece(sq, null));
-    }
-
-    setPosition(fen) {
-      if (!fen || fen === 'startpos') fen = START_FEN;
-      const [board] = fen.trim().split(/\s+/);
-      this.clear();
-      const rows = board.split('/');
-      // DOM порядок зависит от ориентации, но адреса клеток одинаковые — просто расставим по координатам
-      let rank = 8;
-      for (const row of rows) {
-        let fileIndex = 0;
-        for (const ch of row) {
-          if (/\d/.test(ch)) {
-            fileIndex += parseInt(ch, 10);
-          } else {
-            const file = 'abcdefgh'[fileIndex];
-            const isWhite = ch === ch.toUpperCase();
-            const code = (isWhite ? 'w' : 'b') + ch.toUpperCase();
-            this.setPiece(file + rank, code);
-            fileIndex++;
-          }
-        }
-        rank--;
-      }
-    }
-
-    movePiece(from, to) {
-      const piece = this.getPiece(from);
-      if (!piece) return false;
-      const snapshot = this.serialize();
-      // simple move
-      this.setPiece(to, piece);
-      this.setPiece(from, null);
-      this.highlightLastMove(from, to);
-      return snapshot;
-    }
-
-    serialize() {
-      const pos = {};
-      for (const sq of Object.keys(this.sq)) {
-        const p = this.getPiece(sq);
-        if (p) pos[sq] = p;
-      }
-      return pos;
-    }
-    loadSerialized(pos) {
-      this.clear();
-      Object.entries(pos).forEach(([sq, p]) => this.setPiece(sq, p));
-    }
-
-    clearHighlights() {
-      this.el.querySelectorAll('.square.highlight, .square.selected').forEach(s => {
-        s.classList.remove('highlight', 'selected');
-      });
-    }
-    highlightLastMove(from, to) {
-      this.clearHighlights();
-      this.sq[from]?.classList.add('highlight');
-      this.sq[to]?.classList.add('highlight');
-    }
-
-    attachHandlers() {
-      this.el.addEventListener('click', async (e) => {
-        const squareEl = e.target.closest('.square');
-        if (!squareEl) return;
-        const square = squareEl.dataset.square;
-
-        if (!this.selected) {
-          // Выбор клетки-источника
-          if (!this.getPiece(square)) return; // пусто — игнор
-          this.selected = square;
-          squareEl.classList.add('selected');
-          return;
+    class Board {
+        constructor(root, opts = {}) {
+            this.el = typeof root === 'string' ? document.querySelector(root) : root;
+            if (!this.el) throw new Error('Board root not found');
+            this.onMove = opts.onMove || null;
+            this.myMark = (opts.myMark === 'O') ? 'O' : 'X';
+            this.activeMini = (typeof opts.activeMini === 'number') ? opts.activeMini : -1;
+            this.map();
+            this.setActiveMini(this.activeMini);
+            this.attach();
+            document.getElementById("copyPositionBtn").addEventListener("click", () => {
+                navigator.clipboard.writeText(this.getFen()).then(r => {
+                    console.log(r);
+                });
+            })
         }
 
-        const from = this.selected;
-        const to = square;
-        this.selected = null;
-        this.el.querySelectorAll('.square.selected').forEach(el => el.classList.remove('selected'));
-        if (from === to) return;
+        map() {
+            this.cellMap = {};
+            this.minis = Array.from(this.el.querySelectorAll('.mini'));
+            this.el.querySelectorAll('.cell').forEach(cell => {
+                const r = +cell.dataset.row, c = +cell.dataset.col;
+                this.cellMap[`${r}-${c}`] = cell;
+            });
+        }
 
-        const snapshot = this.movePiece(from, to);
-
-        if (this.onMove) {
-          try {
-            const res = await this.onMove({ from, to, piece: this.getPiece(to) });
-            const legal = typeof res === 'boolean' ? res : (res && res.legal !== undefined ? res.legal : true);
-            if (!legal) {
-              // откат
-              this.loadSerialized(snapshot);
-              this.clearHighlights();
+        getFen() {
+            console.log("GRID", this.grid);
+            let status = document.getElementById('gameStatus').textContent;
+            let nextMark = status[status.length - 1];
+            let lastMove = this.pgn[this.pgn.length-1];
+            let fen = nextMark === 'X' ? '0' : '1' + lastMove;
+            console.log(fen);
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    let curMark = this.grid[i][j];
+                    if (curMark === null) {
+                        curMark = "0";
+                    } else if (curMark === "X") {
+                        curMark = "1";
+                    } else {
+                        curMark = "2";
+                    }
+                    fen += curMark;
+                }
             }
-          } catch (err) {
-            this.loadSerialized(snapshot);
-            this.clearHighlights();
-            console.error('onMove error:', err);
-          }
+            return fen;
         }
-      });
-    }
-  }
 
-  window.ChessBoard = ChessBoard;
-  window.START_FEN = START_FEN;
+        getCell(r, c) {
+            return this.cellMap[`${r}-${c}`];
+        }
+
+        getMark(r, c) {
+            const cell = this.getCell(r, c);
+            return cell?.querySelector('.mark')?.dataset.mark || '';
+        }
+
+        setMark(r, c, mark) {
+            const cell = this.getCell(r, c);
+            if (!cell) return;
+            const markEl = cell.querySelector('.mark');
+            if (mark === 'X' || mark === 'O') {
+                markEl.dataset.mark = mark;
+                markEl.textContent = mark;
+                cell.classList.add('taken');
+            } else {
+                markEl.textContent = '';
+                delete markEl.dataset.mark;
+                cell.classList.remove('taken');
+            }
+        }
+
+        clear() {
+            Object.keys(this.cellMap).forEach(key => {
+                const [r, c] = key.split('-').map(Number);
+                this.setMark(r, c, '');
+            });
+            this.clearHighlights();
+            this.minis.forEach(m => delete m.dataset.won);
+        }
+
+        serialize() {
+            let s = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const m = this.getMark(r, c);
+                    s += (m === 'X' || m === 'O') ? m : '.';
+                }
+            }
+            return s;
+        }
+
+        setState(grid, pgn) {
+            if (typeof grid === 'string' && grid.length === 81) {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        const ch = grid[r * 9 + c];
+                        this.setMark(r, c, (ch === 'X' || ch === 'O') ? ch : '');
+                    }
+                }
+                return;
+            }
+            if (Array.isArray(grid) && grid.length === 9) {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        const ch = grid[r]?.[c];
+                        this.setMark(r, c, (ch === 'X' || ch === 'O') ? ch : '');
+                    }
+                }
+            }
+            this.grid = grid;
+            this.pgn = pgn;
+
+            let cellIndex = pgn[pgn.length - 1];
+            let _pgn = "4" + pgn;
+            let last_move = _pgn[_pgn.length - 2];
+            console.log("cellIndex:", cellIndex);
+            console.log("_pgn:", _pgn);
+            console.log("last_move:", last_move);
+            console.log("THIS:", this);
+            // Вычисляем координаты
+            const miniRow = Math.floor(last_move / 3);
+            console.log("miniRow:", miniRow);
+            const miniCol = last_move % 3;
+            console.log("miniCol:", miniCol);
+            const cellRow = Math.floor(cellIndex / 3);
+            console.log("cellRow:", cellRow);
+            const cellCol = cellIndex % 3;
+            console.log("cellCol:", cellCol);
+
+            // Глобальные координаты
+            const globalRow = miniRow * 3 + cellRow;
+            const globalCol = miniCol * 3 + cellCol;
+
+            this.highlightLast(globalRow, globalCol);
+            console.log(globalRow, globalCol);
+        }
+
+        setActiveMini(idx) {
+            this.activeMini = (typeof idx === 'number') ? idx : -1;
+
+            this.minis.forEach((mini, i) => {
+                // Определяем, каким должно быть состояние для ЭТОЙ конкретной доски
+                const shouldBeActive = (this.activeMini !== -1 || i === this.activeMini);
+                const shouldBeDisabled = (this.activeMini !== -1 && i !== this.activeMini);
+
+                if (shouldBeActive) {
+                    mini.classList.add('active');
+                } else {
+                    mini.classList.remove('active');
+                }
+
+                if (shouldBeDisabled) {
+                    mini.classList.add('disabled');
+                } else {
+                    mini.classList.remove('disabled');
+                }
+            });
+        }
+
+        clearHighlights() {
+            this.el.querySelectorAll('.cell.highlight').forEach(cell => cell.classList.remove('highlight'));
+        }
+
+        highlightLast(r, c) {
+            this.clearHighlights();
+            const cell = this.getCell(r, c);
+            if (cell) cell.classList.add('highlight');
+        }
+
+        attach() {
+            this.el.addEventListener('click', async (e) => {
+                console.error("CLICKED");
+                const cell = e.target.closest('.cell');
+                if (!cell || !this.el.contains(cell)) return;
+
+                const r = +cell.dataset.row;
+                const c = +cell.dataset.col;
+                const mini = +cell.dataset.mini;
+
+                if (this.activeMini !== -1 && mini !== this.activeMini) return;
+                if (this.getMark(r, c)) return;
+
+                const snapshot = this.serialize();
+
+                // Оптимистично ставим метку
+                // this.setMark(r, c, this.myMark);
+                // this.highlightLast(r, c);
+
+                if (this.onMove) {
+                    try {
+                        const res = await this.onMove({row: r, col: c, mini, mark: this.myMark});
+                        const ok = typeof res === 'boolean' ? res : (res && (res.ok ?? res.legal ?? true));
+                        if (!ok) {
+                            this.setState(snapshot);
+                            this.clearHighlights();
+                        } else {
+                            // Можно принять вспомогательные данные от сервера (например, следующий активный мини)
+                            if (res && typeof res.nextMini === 'number') this.setActiveMini(res.nextMini);
+                            if (res && res.miniWin) this.setMiniWin(res.miniWin.index, res.miniWin.mark);
+                        }
+                    } catch (err) {
+                        console.error('onMove error', err);
+                        this.setState(snapshot);
+                        this.clearHighlights();
+                    }
+                }
+            });
+        }
+    }
+
+    window.Board = Board;
 })();
+

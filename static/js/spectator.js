@@ -1,3 +1,25 @@
+function fen2grid(fen) {
+    let curMark = null;
+    let mark = fen[0] === '0' ? 'X' : 'O';
+    let activeMini = parseInt(fen[1]);
+    let grid = [];
+    for (let i = 0; i < 9; i++) {
+        grid.push([]);
+        for (let j = 0; j < 9; j++) {
+            curMark = fen[9 * i + j + 2]
+            if (curMark === "0") {
+                curMark = null;
+            } else if (curMark === "1") {
+                curMark = "X";
+            } else {
+                curMark = "O";
+            }
+            grid[i].push(curMark);
+        }
+    }
+    return [mark, activeMini, grid];
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const init = window.INIT || {};
     const gameId = init.gameId;
@@ -8,9 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const board = new TTTBoard('#tttBoard', {});
+    const board = new Board('#Board', {});
     window.board = board;
-    let moveNavigator = new MoveNavigator(board);
+    let movesHistoryManager = new MovesHistoryManager(board);
 
     if (init.initialGrid) {
         board.setState(init.initialGrid);
@@ -30,20 +52,24 @@ document.addEventListener('DOMContentLoaded', () => {
         window.lastGameState = state;
 
         // Обновляем историю ходов
-        if (state.pgn && moveNavigator) {
-            moveNavigator.setMoves(state.pgn);
+        if (state.pgn && movesHistoryManager) {
+            movesHistoryManager.setMoves(state.pgn);
         }
 
+        let cur_state = fen2grid(state.fen)
+        let nextMark = cur_state[0], activeMini = cur_state[1], grid = cur_state[2];
+        console.log(grid);
+
         // Обновляем доску
-        if (!(moveNavigator && moveNavigator.isViewingHistory) && state.board) {
-            board.setState(state.board, state.pgn);
+        if (!(movesHistoryManager && movesHistoryManager.isViewingHistory) && grid) {
+            board.setState(grid, state.pgn);
             board.setActiveMini(-2);
         } else {
-            console.log("DON't UPDATE BOARD", moveNavigator.isViewingHistory);
+            console.log("DON't UPDATE BOARD", movesHistoryManager.isViewingHistory);
         }
 
         // Обновляем статус игры (кто ходит, игра окончена и т.д.)
-        const nextMark = state.step === 0 ? 'X' : 'O';
+        // const nextMark = state.step === 0 ? 'X' : 'O';
         if (state.status) {
             console.log("state.status = ", state.status);
             let statusText = '';

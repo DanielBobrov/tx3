@@ -9,8 +9,7 @@
         <div class="board-col">
             <div class="player top">
                 <div class="user">
-                    X:
-                    <div id="usernameX">{{ render_player_username(game.players[0], players) }}</div>
+                    X: {{ render_player_username(game.players[0], players) }}
                     {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
                 </div>
                 {% if game.use_time %}
@@ -29,8 +28,7 @@
 
             <div class="player bottom">
                 <div class="user">
-                    O:
-                    <div id="usernameO">{{ render_player_username(game.players[0], players) }}</div>
+                    O: {{ render_player_username(game.players[1], players) }}
                     {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
                 </div>
                 {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
@@ -58,12 +56,12 @@
                     <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
                 </div>
                 <div class="moves-list" id="movesList"></div>
+                <div class="navigation-controls"></div>
                 <div class="moves-nav">
                     <div></div>
                     <button class="btn"
-                            id="copyPositionBtn"
-{#                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}"#}
-                    >Copy position
+                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}">Copy
+                        position
                     </button>
                     <div></div>
                     <button id="navFirst" title="В начало">
@@ -89,10 +87,10 @@
                     <div></div>
                     {% if spectator %}
                         <div></div>{% else %}
-                        <button class="btn" id="resign-btn">Сдаться</button>{% endif %}
+                        <button class="btn" id="insert-position-btn">Insert position</button>{% endif %}
                     <div></div>
                 </div>
-                <div class="viewing-indicator" id="viewingIndicator">
+                <div class="viewing-indicator" id="viewingIndicator" style="display: none !important;">
                     Просмотр хода <span id="viewingMoveNum"></span>
                 </div>
             </div>
@@ -119,34 +117,15 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/js/socket.io.js"></script>
-    <script src="/static/js/board.js"></script>
-    <script src="/static/js/timer.js"></script>
-    <script src="/static/js/moves_history.js"></script>
-    <script src="/static/js/notifications.js"></script>
-    {% if spectator %}
-        <script src="/static/js/spectator.js"></script>
-        <script>
-            window.INIT = {
-                gameId: "{{ game.id if game else '' }}",
-            };
-        </script>
-    {% else %}
-        <script>
-            None = null;
-            window.INIT = {
-                gameId: {{ game.id if game else '' }},
-                myMark: "{{ ['O', 'X'][game.players[0] == player.id] }}",
-                initialGrid: {{ game.grid | safe }},
-                fen: "{{ game.fen }}",
-                initialPgn: {{ game.pgn if game.pgn else '""'|safe }},
-                activeMini: {{ game.active_mini if game and game.active_mini else 4 }},
-                me: {{ player.id if player else 'null' }}
-            };
-        </script>
-        <script src="/static/js/game.js"></script>
-        {% if game.players[0] == player.id %}
-            <script>swapPlayers()</script>
-        {% endif %}
-    {% endif %}
+{#    <script src="/static/js/moves_history.js"></script>#}
+    <script src="/static/js/analysis.js"></script>
+    <script>
+        None = null;
+        window.INIT = {
+            myMark: "X",
+            fen: "{{ "0"*82 }}",
+            initialPgn: "",
+            activeMini: 4,
+        };
+    </script>
 {% endblock %}
