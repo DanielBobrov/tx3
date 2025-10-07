@@ -104,16 +104,17 @@ def validator(schema):
     def decorator(function):
         @wraps(function)
         def wrapper(*args, **kwargs):
-            print(args, kwargs)
-            data = request.json if request.method == "POST" else args[0]
-            print("GET request with data:", data)
+            data = request.json if request.method == "POST" else args[0] if args else {}
 
             if data.keys() != schema.keys():
-                print("invalid request")
+                print("invalid request: invalid keys")
+                print("GET:", data.keys(), "\tVALID:", schema.keys())
                 return {"error": "invalid_request"}, 400
             for i in data.keys():
                 try:
                     if not schema[i](data[i]):
+                        print("invalid request")
+                        print("GET:", data[i], "\tKEY:", i, "\tVALID:", schema[i])
                         return {"error": "invalid_request"}, 400
                 except:
                     return {"error": "invalid_request"}, 400
@@ -216,7 +217,7 @@ def on_add_time(data):
 
 
 @socketio.on("join")
-@validator({"game_id": positive, "player_id": positive})
+@validator({"game_id": positive})
 @auth_player
 def on_join(data):
     """Клиент присоединяется к комнате игры."""
@@ -255,7 +256,7 @@ def on_resign_fn(data):
 
 
 @socketio.on("move")
-@validator({"game_id": positive, "player_id": positive, "row": positive, "col": positive})
+@validator({"game_id": positive, "row": positive, "col": positive})
 @auth_player
 def on_move_fn(data):
     """Обработка хода, полученного через WebSocket."""
@@ -396,11 +397,11 @@ def on_post_signup_fn():
 
 @app.route("/create_game", methods=["POST"])
 @validator({
-    "use_time": bool,
+    "use_time": lambda x: isinstance(x, bool),
     "duration": positive,
     "addition": positive,
     "player_piece": lambda x: x in ["X", "O"],
-    "use_random_start": bool
+    "use_random_start": lambda x: isinstance(x, bool)
 })
 @auth_player
 def on_create_game_fn():
