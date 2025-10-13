@@ -14,6 +14,7 @@ dotenv.load_dotenv()
 app = flask.Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 app.config["SESSION_VERSION"] = datetime.datetime.now().timestamp()
+app.permanent_session_lifetime = datetime.timedelta(days=30)
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
 socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet", cors_allowed_origins="*",
@@ -106,10 +107,6 @@ def validator(schema):
         def wrapper(*args, **kwargs):
             data = request.json if request.method == "POST" else args[0] if args else {}
 
-            if data.keys() != schema.keys():
-                print("invalid request: invalid keys")
-                print("GET:", data.keys(), "\tVALID:", schema.keys())
-                return {"error": "invalid_request"}, 400
             for i in data.keys():
                 try:
                     if not schema[i](data[i]):
@@ -316,10 +313,13 @@ def on_move_fn(data):
 @validator({})
 @auth_player
 def home():
-    last_games = list(games)[::-1]
+    last_games = games.get_by("status", WAITING)[::-1]
     if len(last_games) > 5:
         last_games = last_games[:5]
-    return render_template("index.html", last_games=last_games, player=players[session.get("player_id")])
+    player_games = [games[game_id] for game_id in players[session.get("player_id")].games[::-1]]
+    if len(player_games) > 10:
+        player_games = player_games[:10]
+    return render_template("index.html", last_games=last_games, player_games=player_games, player=players[session.get("player_id")])
 
 
 @app.route("/analysis")

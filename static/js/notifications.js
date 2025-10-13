@@ -39,11 +39,5 @@ document.addEventListener("DOMContentLoaded", () => {
             return !document[stateKey];
         }
     })();
-    window.visible = true;
-
-    vis(function () {
-        document.title = vis() ? window.visible = true : window.visible = false;
-    });
     window.notificationsManager = new NotificationsManager();
-
 });

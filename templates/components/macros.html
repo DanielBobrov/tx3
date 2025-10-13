@@ -2,12 +2,31 @@
     {% if player %}{% set player_username = players[player].username %}{% endif %}
     <div class="btn">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
 {%- endmacro %}
+
 {% macro render_player_username(player, players) -%}
     {% if player %}{% set player_username = players[player].username %}{% endif %}
-    <div class="username">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
+    <div class="username" style="text-overflow: ellipsis; overflow: hidden;">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
 {%- endmacro %}
-{% macro convert_status(state) -%}
-    {% if state == "ended" %}Игра завершена{% endif %}
-    {% if state == "active" %}Игра идет{% endif %}
-    {% if state == "waiting" %}Ждем второго игрока{% endif %}
+
+{% macro game_card(game, players) -%}
+    {% from "components/board.html" import render_board %}
+    <div class="btn ghost game" style="cursor:default;">
+        <a href="/game/{{ game.id }}" class="">
+            {{ render_board('Board-{{game.id}}', game.fen) }}
+        </a>
+        <div class="players">
+            <div class="winner" style="visibility: {{ "visible" if 0 == game.winner else "hidden" }}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="5 0 90 90">
+                    <path fill="#FFD700" d="M22 75H75V75L87 18L64 46L50 26L36 46L13 18L25 75Z"></path>
+                </svg>
+            </div>
+            {{ render_player_username(game.players[0], players) }}
+            <div class="winner" style="visibility: {{ "visible" if 1 == game.winner else "hidden" }}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="5 0 90 90">
+                    <path fill="#FFD700" d="M22 75H75V75L87 18L64 46L50 26L36 46L13 18L25 75Z"></path>
+                </svg>
+            </div>
+            {{ render_player_username(game.players[1], players) }}
+        </div>
+    </div>
 {%- endmacro %}
