@@ -1,0 +1,846 @@
+/* Sticky footer: body — флекс-колонка, main растягивается */
+body {
+    background: var(--bg-main);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* main — гибкий, чтобы футер всегда внизу */
+main {
+    flex: 1 0 auto;
+}
+
+.container {
+    width: min(1200px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+.navbar {
+    background: #120f0c;
+    border-bottom: 1px solid var(--border-color-main);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.logo {
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.nav-links a {
+    color: var(--text);
+    text-decoration: none;
+    margin: 0 8px;
+    opacity: .9;
+}
+
+.nav-links a:hover {
+    opacity: 1;
+}
+
+.nav-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.search {
+    background: var(--bg-dark);
+    color: var(--text);
+    border: 1px solid var(--border-color-main);
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+.footer {
+    border-top: 1px solid var(--border-color-main);
+}
+
+.footer-inner {
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn {
+    background: var(--bg-btn);
+    color: var(--text);
+    border: 1px solid var(--border-color-light);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    user-select: none;
+}
+
+.btn:hover {
+    border-color: var(--border-active-color);
+}
+
+.btn.primary {
+    background: var(--accent);
+    color: #100d0a;
+    border-color: transparent;
+}
+
+.btn.ghost {
+    background: transparent;
+    border-color: var(--border-active-color);
+}
+
+.tr.ghost.btn .btn {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.btn.small {
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+.btn.danger {
+    background: var(--danger);
+    color: white;
+    border-color: transparent;
+}
+
+.link {
+    color: #d7ad70;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 16px;
+    padding: 16px 0 8px;
+}
+
+.hero h1 {
+    margin: 8px 0 6px;
+    font-size: 28px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.cta-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.grid.two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border-color-main);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.games {
+    display: grid;
+    /*flex-wrap: wrap; gap: 6px; justify-content: space-between;*/
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.game {
+    display: flex;
+    justify-content: space-between;
+    height: 100px;
+    /*width: calc(50% - 6px);*/
+    /*min-width: 250px;*/
+    /*max-width: 277px;*/
+}
+
+.game:hover {
+    /*border: 1px solid #fff;*/
+    box-shadow: 0 0 20px #ffffff0f;
+    background: #ffffff04;
+}
+
+.players {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr 1fr;
+    align-items: center;
+    gap: 0;
+}
+
+.winner svg {
+    height: 18px !important;
+    margin-top: 4px;
+}
+
+.tr {
+    display: grid;
+    grid-template-columns: 1fr .8fr .8fr .8fr .6fr;
+    gap: 8px;
+    align-items: center;
+    background: #1b160f;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+.tr.th {
+    background: transparent;
+    font-weight: 600;
+}
+
+.tr.empty {
+    grid-template-columns: 1fr;
+}
+
+.live-list {
+    display: grid;
+    gap: 8px;
+}
+
+.live-item {
+    display: block;
+    background: #1b160f;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+}
+
+.live-item:hover {
+    outline: 1px solid #3b2f23;
+}
+
+/*.players { display:flex; gap:8px; }*/
+
+.game-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 720px) minmax(280px, 1fr);
+    gap: 16px;
+    margin: 10px;
+}
+
+.board-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.board-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border-color-main);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.clock {
+    font-variant-numeric: tabular-nums;
+    background: var(--bg-dark);
+    padding: 6px 10px;
+    border-radius: 8px;
+    min-width: 64px;
+    text-align: right;
+}
+
+.side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--border-color-main) inset;
+}
+
+.square {
+    position: relative;
+    width: 100%;
+    padding-top: 100%;
+}
+
+.square.light {
+    background: var(--board-light);
+}
+
+.square.dark {
+    background: var(--board-dark);
+}
+
+.square .piece {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(28px, 7.5vw, 64px);
+    user-select: none;
+    pointer-events: none;
+}
+
+.square.highlight {
+    box-shadow: inset 0 0 0 100vmax var(--hl);
+}
+
+.square.selected {
+    box-shadow: inset 0 0 0 100vmax var(--sel);
+}
+
+.coord {
+    position: absolute;
+    font-size: 12px;
+    color: #0008;
+}
+
+.square.dark .coord {
+    color: #fff9;
+}
+
+.coord-file {
+    right: 4px;
+    bottom: 2px;
+}
+
+.coord-rank {
+    left: 4px;
+    top: 2px;
+}
+
+.moves .moves-list {
+    margin: 0;
+    padding: 0 2px 2px 20px;
+    max-height: 40vh;
+    overflow: auto;
+}
+
+.chat .chat-log {
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color-main);
+    border-radius: 8px;
+    min-height: 120px;
+    max-height: 30vh;
+    overflow: auto;
+    padding: 8px;
+}
+
+.chat .chat-input {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 960px) {
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .grid.two {
+        grid-template-columns: 1fr;
+    }
+
+    .game-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Фигуры (Unicode) */
+.piece::before {
+    content: '';
+}
+
+.piece[data-piece="wK"]::before {
+    content: "♔";
+}
+
+.piece[data-piece="wQ"]::before {
+    content: "♕";
+}
+
+.piece[data-piece="wR"]::before {
+    content: "♖";
+}
+
+.piece[data-piece="wB"]::before {
+    content: "♗";
+}
+
+.piece[data-piece="wN"]::before {
+    content: "♘";
+}
+
+.piece[data-piece="wP"]::before {
+    content: "♙";
+}
+
+.piece[data-piece="bK"]::before {
+    content: "♚";
+}
+
+.piece[data-piece="bQ"]::before {
+    content: "♛";
+}
+
+.piece[data-piece="bR"]::before {
+    content: "♜";
+}
+
+.piece[data-piece="bB"]::before {
+    content: "♝";
+}
+
+.piece[data-piece="bN"]::before {
+    content: "♞";
+}
+
+.piece[data-piece="bP"]::before {
+    content: "♟";
+}
+
+.notice {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+
+/* ========== Board ========== */
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 0;
+    height: 100%;
+    max-height: 640px;
+    aspect-ratio: 1 / 1;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 0 0 1px var(--border-color-main) inset;
+}
+
+.board .mini {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 0;
+    background: var(--board-dark);
+    border: 1px solid #a27d56;
+    border-radius: 3px;
+    overflow: hidden;
+    transition: outline-color .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+
+.board .mini.active {
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+/*.ttt-board .disabled { opacity: .6; }*/
+.board .disabled .cell {
+    pointer-events: none;
+    opacity: .6;
+}
+
+.board .mini[data-won]::after {
+    content: attr(data-won);
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(64px, 20vw, 180px);
+    font-weight: 900;
+    color: rgba(0, 0, 0, .18);
+    letter-spacing: 4px;
+    pointer-events: none;
+}
+
+/* Клетки и метки */
+.board .cell {
+    background: var(--board-light);
+    border-radius: 3px;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    user-select: none;
+    aspect-ratio: 1 / 1; /* квадратные клетки */
+    position: relative;
+    transition: background-color .12s ease, transform .06s ease;
+}
+
+.board .cell:hover {
+    background: #ecd3ae;
+}
+
+.board .cell:active {
+    transform: scale(.98);
+}
+
+.board .cell.taken {
+    cursor: default;
+}
+
+.board .cell .mark {
+    font-size: 8px;
+    line-height: .8;
+    font-weight: 800;
+    color: #4a2f1a; /* базовый цвет X/O, дальше переопределяется */
+    pointer-events: none;
+}
+
+.board .cell .mark[data-mark="X"] {
+    color: #6b3f1b;
+}
+
+/* X — тёплый коричневый */
+.board .cell .mark[data-mark="O"] {
+    color: #1f6f5a;
+}
+
+/* O — зелёно‑бирюзовый для контраста */
+
+.board .cell.highlight {
+    box-shadow: inset 0 0 0 100vmax #e3c07a44;
+    background: var(--board-dark);
+}
+
+.board .cell.cursor {
+    border: 3px solid #ff8d00;
+    /*opacity: 1;*/
+    /*background-color: #F0D9B599;*/
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Затемнение фона */
+    animation: fadeIn 0.2s ease;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--panel);
+    border: 1px solid var(--border-color-main);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    animation: slideIn 0.2s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.modal-close:hover {
+    background: var(--bg-btn);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.form-control {
+    width: 100%;
+    background: var(--bg-dark);
+    color: var(--text);
+    border: 1px solid var(--border-color-main);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--border-active-color);
+}
+
+.game-side-options {
+    display: flex;
+    justify-content: center;
+}
+
+.radio-group {
+    margin: 15px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.radio-option {
+    display: inline-block;
+    float: left;
+    align-items: center;
+    gap: 6px;
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+input[type=radio]:checked + label {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+input[type=radio] + label {
+    cursor: pointer;
+    min-width: 30px;
+    padding: 10px;
+    border: 1px solid var(--border-color-light);
+    text-align: center;
+}
+
+.radio-option:last-child label {
+    border-radius: 0 6px 6px 0;
+}
+
+.radio-option:first-child label {
+    border-radius: 6px 0 0 6px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Стили для range input с поддержкой Webkit */
+input.range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-dark);
+    /*border: 1px solid #3a3127;*/
+    border: 1px solid var(--border-color-light);
+    border-radius: 1em;
+    font-size: 1em;
+    margin-top: .5em;
+    padding: 2px;
+    width: 90%;
+    height: calc(1em + 4px);
+    outline: none;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+input.range::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 1em;
+    cursor: pointer;
+    background: transparent;
+    border-radius: 1em;
+}
+
+input.range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid var(--accent);
+    height: calc(1em + 4px);
+    width: 1.5em;
+    border-radius: 12px;
+    background: var(--bg-contrast);
+    cursor: pointer;
+    margin-top: -2px;
+}
+
+/* Firefox */
+input.range::-moz-range-track {
+    width: 100%;
+    height: 1em;
+    cursor: pointer;
+    background: transparent;
+    border-radius: 1em;
+}
+
+input.range::-moz-range-thumb {
+    border: 1px solid var(--accent);
+    height: calc(1em + 4px);
+    width: 1.5em;
+    border-radius: 12px;
+    background: var(--bg-contrast);
+    cursor: pointer;
+}
+
+/* Focus styles */
+input.range:focus {
+    outline: none;
+}
+
+input.range:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(197, 139, 67, 0.2);
+}
+
+input.range:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(197, 139, 67, 0.2);
+}
+
+/* Дополнительные стили для лучшей поддержки Chromium */
+button {
+    font-family: inherit;
+}
+
+/* Scrollbar styling for Webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-active-color);
+}
+
+/* Selection color */
+::selection {
+    background: var(--accent);
+    color: var(--bg-dark);
+}
+
+::-moz-selection {
+    background: var(--accent);
+    color: var(--bg-dark);
+}
+
+/* Autofill styles for Webkit */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--bg-dark) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+/* Placeholder styles */
+::-webkit-input-placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+::-moz-placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+:-ms-input-placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}

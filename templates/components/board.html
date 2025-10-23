@@ -1,4 +1,4 @@
-{% macro render_board(board_id='Board') -%}
+{% macro render_board(board_id='Board', fen="04" + "0" * 81) -%}
 <div id="{{ board_id }}" class="board" data-size="3" data-cell-size="3">
   {% for mr in range(0,3) %}
     {% for mc in range(0,3) %}
@@ -14,7 +14,14 @@
                  data-col="{{ col }}"
                  data-mini="{{ miniIndex }}"
                  data-cell="{{ cellIndex }}">
-              <div class="mark"></div>
+            {% set mark = fen[9*row + col + 2] %}
+              {% if mark == "1" %}
+                  <div class="mark" data-mark="X">X</div>
+              {% elif mark == "2" %}
+                  <div class="mark" data-mark="O">O</div>
+              {% else %}
+                  <div class="mark"></div>
+              {% endif %}
             </div>
           {% endfor %}
         {% endfor %}
