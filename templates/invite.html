@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import render_player_username, convert_status %}
+{% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в кресты-обручи онлайн{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="/static/css/invite.css">
+    <script src="/static/js/invite.js"></script>
+
+    <div class="panel">
+        <div class="panel-head">
+            <h3>Присоединиться к игре</h3>
+        </div>
+        {% if game.players[0] is not none %}
+            {%  set opponent_id = game.players[0] %}
+        {% else %}
+            {%  set opponent_id = game.players[1] %}
+        {% endif %}
+        <div class="game-info">
+            Против: {{ render_player_username(opponent_id, players) }}
+            Время:
+            {% if not game.use_time %}
+                <div class="time-info"> Без времени </div>
+            {% else %}
+                <div class="time-info"> {{ game.left_time[0] // 60 }}+{{ game.time_addition }} </div>
+            {% endif %}
+        </div>
+        <div class="buttons">
+
+            <div class="btn accept" onclick="join_game({{ game.id }})">Присоединиться</div>
+            <div class="btn ghost decline" onclick="join_spectator({{ game.id }})">Зайти наблюдателем</div>
+
+        </div>
+
+    </div>
+
+    <script src="/static/js/notifications.js"></script>
+{% endblock %}
+{% block scripts %}
+{% endblock %}

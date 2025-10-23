@@ -322,6 +322,13 @@ def home():
     return render_template("index.html", last_games=last_games, player=players[session.get("player_id")])
 
 
+@app.route("/invite/<int:game_id>")
+@validator({})
+@auth_player
+def on_invite(game_id: int):
+    return render_template("invite.html", game=games[game_id], player=players[session.get("player_id")])
+
+
 @app.route("/analysis")
 @validator({})
 @auth_player
@@ -420,6 +427,47 @@ def on_create_game_fn():
     return {"game_id": f"{game.id}"}
 
 
+@app.route("/join_game/<int:game_id>", methods=["GET"])
+@validator({})
+@auth_player
+def on_join(game_id: int):
+    game: Game = games[game_id]
+    if game is None:
+        return redirect("/")
+    if game.status != WAITING:
+        return redirect(f"/game/{game_id}")
+    player_id = session["player_id"]
+
+    if player_id in game.players:
+        return redirect(f"/game/{game_id}")
+
+    if game.players[0] is not None and game.players[1] is not None:
+        return redirect("/")
+
+    if game.players[0] is None:
+        game.players[0] = player_id
+    else:
+        game.players[1] = player_id
+
+    # Добавляем игру в список игр игрока
+    player = players[player_id]
+    player.games.append(game_id)
+    players[player_id] = player
+
+    games[game_id] = game
+    game.status = ACTIVE
+    game.last_move_time = datetime.datetime.now()
+
+    if game.use_time:
+        timers[game_id] = ExtendableTimer(game.left_time[0], lose_by_time, args=[game, 0])
+        timers[game_id].start()
+
+    active_games[game_id] = game
+    socketio.start_background_task(target=broadcast_game_state, game_id=game_id)
+
+    return redirect(f"/game/{game_id}")
+
+
 @app.route("/game/<int:game_id>", methods=["GET"])
 @validator({})
 @auth_player
@@ -443,34 +491,13 @@ def on_game_fn(game_id: int):
         return render_template("active_game.html", game=game, player=players[session.get("player_id")], spectator=True)
 
     if game.status == WAITING:
-        # Если это создатель игры, то он ждет
-        if is_player:
-            return render_template("waiting_game.html", game=game, player=players[session.get("player_id")])
-
-        # Если это второй игрок, он присоединяется
-        if game.players[0] is None:
-            game.players[0] = player_id
-        else:
-            game.players[1] = player_id
-        player = players[player_id]
-        player.games.append(game_id)
-        players[player_id] = player
-
-        game.status = ACTIVE
-        games[game_id] = game
-        game.last_move_time = datetime.datetime.now()
-
-        if game.use_time:
-            timers[game_id] = ExtendableTimer(game.left_time[0], lose_by_time, args=[game, 0])
-            timers[game_id].start()
-
-        active_games[game_id] = game
-        socketio.start_background_task(target=broadcast_game_state, game_id=game_id)
-
-        return redirect(f"/game/{game_id}")
+        return render_template("waiting_game.html", game=game, player=players[session.get("player_id")])
 
     return redirect(f"/")
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    if os.getenv('TEST'):
+        socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    else:
+        socketio.run(app, host="127.0.0.1", port=5000, debug=False)

@@ -1,0 +1,28 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buttons {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn.accept {
+    background-color: var(--bg-btn);
+}
+
+.game-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.panel > * {
+    margin-bottom: 10px;
+}
+
+.panel-head > * {
+    margin: 5px 0 5px 0;
+}

@@ -1,10 +1,10 @@
-{% macro render_player_button(player, players) -%}
-    {% if player %}{% set player_username = players[player].username %}{% endif %}
-    <div class="btn">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
+{% macro render_player_button(player_id, players) -%}
+    {% if player_id %}{% set player_username = players[player_id].username %}{% endif %}
+    <div class="btn">{{ (player_username if player_username else "Anon") if player_id else "-" }}</div>
 {%- endmacro %}
-{% macro render_player_username(player, players) -%}
-    {% if player %}{% set player_username = players[player].username %}{% endif %}
-    <div class="username">{{ (player_username if player_username else "Anon") if player else "-" }}</div>
+{% macro render_player_username(player_id, players) -%}
+    {% if player_id %}{% set player_username = players[player_id].username %}{% endif %}
+    <div class="username">{{ (player_username if player_username else "Anon") if player_id else "-" }}</div>
 {%- endmacro %}
 {% macro convert_status(state) -%}
     {% if state == "ended" %}Игра завершена{% endif %}
