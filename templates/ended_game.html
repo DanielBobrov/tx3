@@ -8,8 +8,9 @@
     <section class="game-layout">
         <div class="board-col">
             <div class="player top">
-                <div class="user">
-                    {{ render_player_username(game.players[0], players) }}
+                <div class="nickname">
+                    X:
+                    <div id="usernameX">{{ render_player_username(game.players[0], players) }}</div>
                     {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
                 </div>
                 {% if game.use_time %}
@@ -24,8 +25,9 @@
             </div>
 
             <div class="player bottom">
-                <div class="user">
-                    {{ render_player_username(game.players[1], players) }}
+                <div class="nickname">
+                    O:
+                    <div id="usernameO">{{ render_player_username(game.players[1], players) }}</div>
                     {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
                 </div>
                 {% if game.use_time %}
@@ -54,7 +56,7 @@
                     <button class="btn"
                             id="copyPositionBtn"
 {#                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}"#}
-                    >Copy position
+                    >Скопировать игру
                     </button>
                     <div></div>
                     <button id="navFirst" title="В начало">
@@ -77,6 +79,8 @@
                             <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
                         </svg>
                     </button>
+                    <div></div>
+                    <button class="btn" onclick="window.location.href = '/analysis?game_id={{ game.id if game else 0 }}'">Анализировать позицию</button>
                 </div>
                 <div class="viewing-indicator" id="viewingIndicator">
                     Просмотр хода <span id="viewingMoveNum"></span>

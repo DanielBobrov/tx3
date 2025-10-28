@@ -1,0 +1,198 @@
+/* analysis.css - Стили для экрана анализа партий */
+
+/* Контейнер дерева ходов */
+#movesTree {
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Courier New', Consolas, monospace;
+    line-height: 1.8;
+    font-size: 14px;
+    background-color: var(--panel);
+    border-radius: 6px;
+}
+
+/* Линия ходов */
+.move-line {
+    margin: 4px 0;
+    white-space: nowrap;
+}
+
+/* Элемент хода */
+.move-item {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s, color 0.15s;
+    display: inline-block;
+    /* margin-right: 10px; */
+    color: var(--text);
+    width: auto;
+}
+
+/* Цвета для X и O */
+.move-item:hover:not(.current) {
+    background-color: var(--bg-btn);
+}
+
+/* Текущий ход */
+.move-item.current {
+    background: #2a231b !important;
+    color: var(--text) !important;
+    font-weight: 600;
+}
+
+/* Основной контейнер пары ходов */
+.main-move {
+    margin: 2px 0;
+}
+
+/* Главная линия в main-move (grid для двух столбцов) */
+.main-move > .main-line {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Альтернативный ход */
+.alt-move {
+    margin-left: 30px;
+    position: relative;
+}
+
+/* Вертикальная линия для альтернативы */
+.alt-move::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color-light);
+}
+
+/* Последняя альтернатива - линия только до main-line */
+.alt-move:last-child::before {
+    height: 0.9em;
+}
+
+/* Горизонтальная линия для альтернативы - привязана к main-line */
+.alt-move > .main-line::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: .9em;
+    width: 15px;
+    height: 2px;
+    background: var(--border-color-light);
+}
+
+/* Главная линия в alt-move (flex для inline) */
+.alt-move > .main-line {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+    position: relative;
+}
+
+/* Вложенные альтернативы получают дополнительный отступ */
+.alt-move .alt-move {
+    margin-left: 30px;
+}
+
+.alt-move .move-item {
+    width: auto;
+}
+
+/* Кнопка вставки PGN */
+#pastePgnBtn {
+    font-size: 12px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    background: var(--bg-btn);
+    color: var(--text);
+    border: 1px solid var(--border-color-light);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+#pastePgnBtn:hover {
+    border-color: var(--border-active-color);
+    background: var(--border-color-light);
+}
+
+/* Панель анализа */
+.panel.moves .panel-head h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+/* Навигация */
+.moves-nav {
+    display: grid;
+    grid-template-columns: .2fr .2fr 1fr .2fr .2fr .2fr .2fr 1fr .2fr .2fr;
+    gap: 4px;
+    padding: 8px;
+    border-top: 1px solid var(--border-color-main);
+    justify-content: center;
+}
+
+.nav-spacer {
+    /* Занимает место в grid, но невидим */
+}
+
+.moves-nav button {
+    background: var(--bg-btn);
+    color: var(--text);
+    border: 1px solid var(--border-color-light);
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+
+.moves-nav button:hover:not(:disabled) {
+    border-color: var(--border-active-color);
+    background: var(--border-color-light);
+}
+
+.moves-nav button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.moves-nav button svg {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+/* Статус игры */
+#gameStatus {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 2px 0;
+}
+
+/* Скроллбар для дерева ходов */
+#movesTree::-webkit-scrollbar {
+    width: 8px;
+}
+
+#movesTree::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 4px;
+}
+
+#movesTree::-webkit-scrollbar-thumb {
+    background: var(--bg-btn);
+    border-radius: 4px;
+}
+
+#movesTree::-webkit-scrollbar-thumb:hover {
+    background: var(--border-color-light);
+}

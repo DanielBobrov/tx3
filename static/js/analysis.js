@@ -1,829 +1,730 @@
-// Класс для узла дерева ходов
-class MoveNode {
-    constructor(move, parent = null) {
-        this.move = move; // {cellIndex, mark, activeMini, globalRow, globalCol}
-        this.parent = parent;
-        this.children = [];
-        this.comment = '';
+// analysis.js - Система анализа партий с деревом вариантов
+
+// ===== КЛАСС 1: ИГРОВАЯ ЛОГИКА =====
+class GameLogic {
+    constructor() {
+        this.WIN_PATTERNS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // горизонтали
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // вертикали
+            [0, 4, 8], [2, 4, 6]              // диагонали
+        ];
     }
 
-    addChild(moveNode) {
-        this.children.push(moveNode);
-        return moveNode;
-    }
-
-    getMainLine() {
-        // Возвращает основную линию (первый ребенок на каждом уровне)
-        const moves = [];
-        let current = this;
-        while (current.children.length > 0) {
-            current = current.children[0];
-            moves.push(current);
+    /**
+     * Парсинг FEN в массив
+     * FEN формат: "04" + 81 символов (0=пусто, 1=X, 2=O)
+     * Первый символ - текущий игрок (0=X, 1=O)
+     * Второй символ - активная минидоска (0-8)
+     */
+    parseFen(fen) {
+        if (typeof fen !== 'string' || fen.length !== 83) {
+            return null;
         }
-        return moves;
+        
+        const step = parseInt(fen[0]); // 0=X ходит, 1=O ходит
+        const activeMini = parseInt(fen[1]);
+        const grid = [];
+        
+        for (let i = 0; i < 9; i++) {
+            grid[i] = [];
+            for (let j = 0; j < 9; j++) {
+                const idx = 2 + i * 9 + j;
+                const val = fen[idx];
+                grid[i][j] = val === '0' ? null : (val === '1' ? 'X' : 'O');
+            }
+        }
+        
+        return { step, activeMini, grid };
     }
 
-    getAllMoves() {
-        // Возвращает все ходы от корня до текущего узла
-        const moves = [];
+    /**
+     * Создание FEN из состояния
+     */
+    createFen(step, activeMini, grid) {
+        let fen = step.toString() + activeMini.toString();
+        
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                const cell = grid[i][j];
+                fen += cell === null ? '0' : (cell === 'X' ? '1' : '2');
+            }
+        }
+        
+        return fen;
+    }
+
+    /**
+     * Валидация хода
+     */
+    isValidMove(fen, move, activeMini) {
+        if (move < 0 || move > 8) {
+            return { valid: false, error: 'Неверный номер клетки (0-8)' };
+        }
+
+        const state = this.parseFen(fen);
+        if (!state) {
+            return { valid: false, error: 'Неверный формат FEN' };
+        }
+
+        // Проверяем, что ходим в правильную минидоску
+        if (activeMini !== -1 && activeMini !== state.activeMini) {
+            return { valid: false, error: `Нужно ходить в минидоску ${state.activeMini}` };
+        }
+
+        // Вычисляем координаты клетки
+        const miniRow = Math.floor(state.activeMini / 3);
+        const miniCol = state.activeMini % 3;
+        const cellRow = Math.floor(move / 3);
+        const cellCol = move % 3;
+        const globalRow = miniRow * 3 + cellRow;
+        const globalCol = miniCol * 3 + cellCol;
+
+        // Проверяем, что клетка пустая
+        if (state.grid[globalRow][globalCol] !== null) {
+            return { valid: false, error: 'Клетка уже занята' };
+        }
+
+        return { valid: true };
+    }
+
+    /**
+     * Применение хода и возврат нового FEN
+     */
+    applyMove(fen, move) {
+        const state = this.parseFen(fen);
+        if (!state) return null;
+
+        const currentMark = state.step === 0 ? 'X' : 'O';
+        const miniRow = Math.floor(state.activeMini / 3);
+        const miniCol = state.activeMini % 3;
+        const cellRow = Math.floor(move / 3);
+        const cellCol = move % 3;
+        const globalRow = miniRow * 3 + cellRow;
+        const globalCol = miniCol * 3 + cellCol;
+
+        // Ставим метку
+        state.grid[globalRow][globalCol] = currentMark;
+
+        // Проверяем победу в минидоске
+        const miniBoard = this.getMiniBoard(state.grid, state.activeMini);
+        const miniWinner = this.checkMiniWin(miniBoard);
+
+        // Проверяем заполнение минидоски (если нет победителя)
+        if (!miniWinner && this.isMiniboardFull(miniBoard)) {
+            // Очищаем минидоску
+            this.clearMiniBoard(state.grid, state.activeMini);
+        }
+
+        // Следующий ход
+        const nextStep = (state.step + 1) % 2;
+        const nextActiveMini = move;
+
+        const newFen = this.createFen(nextStep, nextActiveMini, state.grid);
+        
+        return {
+            fen: newFen,
+            winner: miniWinner,
+            gameWon: !!miniWinner // Победа в игре = победа в минидоске
+        };
+    }
+
+    /**
+     * Получить минидоску как массив 9 элементов
+     */
+    getMiniBoard(grid, miniIndex) {
+        const miniRow = Math.floor(miniIndex / 3);
+        const miniCol = miniIndex % 3;
+        const board = [];
+
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                const globalRow = miniRow * 3 + r;
+                const globalCol = miniCol * 3 + c;
+                board.push(grid[globalRow][globalCol]);
+            }
+        }
+
+        return board;
+    }
+
+    /**
+     * Проверка победы в минидоске
+     */
+    checkMiniWin(miniBoard) {
+        for (const pattern of this.WIN_PATTERNS) {
+            const [a, b, c] = pattern;
+            if (miniBoard[a] && 
+                miniBoard[a] === miniBoard[b] && 
+                miniBoard[a] === miniBoard[c]) {
+                return miniBoard[a];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Проверка заполнения минидоски
+     */
+    isMiniboardFull(miniBoard) {
+        return miniBoard.every(cell => cell !== null);
+    }
+
+    /**
+     * Очистка минидоски
+     */
+    clearMiniBoard(grid, miniIndex) {
+        const miniRow = Math.floor(miniIndex / 3);
+        const miniCol = miniIndex % 3;
+
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                const globalRow = miniRow * 3 + r;
+                const globalCol = miniCol * 3 + c;
+                grid[globalRow][globalCol] = null;
+            }
+        }
+    }
+}
+
+// ===== КЛАСС 2: УЗЕЛ ДЕРЕВА =====
+class Node {
+    constructor(move = null, fen = null, mark = null, parent = null) {
+        this.move = move;           // Номер хода 0-8 (или null для корня)
+        this.fen = fen;             // FEN после этого хода
+        this.mark = mark;           // 'X' или 'O' - кто сходил
+        this.parent = parent;       // Родительский узел
+        this.children = [];         // Массив дочерних узлов
+        this.winner = null;         // Победитель после этого хода
+    }
+
+    /**
+     * Добавить дочерний узел
+     */
+    addChild(move, fen, mark) {
+        const child = new Node(move, fen, mark, this);
+        this.children.push(child);
+        return child;
+    }
+
+    /**
+     * Найти ребенка с указанным ходом
+     */
+    findChild(move) {
+        return this.children.find(child => child.move === move);
+    }
+
+    /**
+     * Получить путь от корня до этого узла
+     */
+    getPath() {
+        const path = [];
         let current = this;
+        
         while (current.parent) {
-            moves.unshift(current);
+            path.unshift(current);
             current = current.parent;
         }
-        return moves;
+        
+        return path;
     }
 
-    getMoveNumber() {
-        // Вычисляет номер хода
-        const moves = this.getAllMoves();
-        return Math.floor((moves.length - 1) / 2) + 1;
-    }
-
+    /**
+     * Получить глубину узла (расстояние от корня)
+     */
     getDepth() {
-        // Вычисляет глубину узла в дереве вариантов
         let depth = 0;
         let current = this;
-
+        
         while (current.parent) {
-            // Если это не первый ребенок, увеличиваем глубину
-            const siblings = current.parent.children;
-            if (siblings.indexOf(current) > 0) {
-                depth++;
-            }
+            depth++;
             current = current.parent;
         }
-
+        
         return depth;
     }
 }
 
-class MovesTreeManager {
-    constructor(board) {
+// ===== КЛАСС 3: МЕНЕДЖЕР АНАЛИЗА =====
+class AnalysisManager {
+    constructor(board, startFen = null) {
         this.board = board;
-        this.root = new MoveNode(null); // Корневой узел без хода
+        this.logic = new GameLogic();
+        
+        // Инициализация дерева
+        const initialFen = startFen || '04' + '0'.repeat(81);
+        this.root = new Node(null, initialFen, null, null);
         this.currentNode = this.root;
-
-        this.initControls();
-        this.initMovesList();
+        
+        this.initUI();
+        
+        // Обновляем доску с начальным состоянием
+        this.updateBoard();
     }
 
-    initControls() {
-        document.getElementById('navFirst').addEventListener('click', () => this.goToStart());
-        document.getElementById('navPrev').addEventListener('click', () => this.goToPreviousMove());
-        document.getElementById('navNext').addEventListener('click', () => this.goToNextMove());
-        document.getElementById('navLast').addEventListener('click', () => this.goToMainLineEnd());
+    /**
+     * Инициализация UI элементов
+     */
+    initUI() {
+        // Навигация
+        document.getElementById('navFirst')?.addEventListener('click', () => this.goToFirst());
+        document.getElementById('navPrev')?.addEventListener('click', () => this.goBack());
+        document.getElementById('navNext')?.addEventListener('click', () => this.goForward());
+        document.getElementById('navLast')?.addEventListener('click', () => this.goToLast());
 
-        addEventListener("keydown", (event) => {
-            if (event.key === "ArrowLeft") this.goToPreviousMove();
-            else if (event.key === "ArrowRight") this.goToNextMove();
-            else if (event.key === "ArrowUp") this.goToStart();
-            else if (event.key === "ArrowDown") this.goToMainLineEnd();
+        // Клавиши
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') this.goBack();
+            else if (e.key === 'ArrowRight') this.goForward();
+            else if (e.key === 'ArrowUp') this.goToFirst();
+            else if (e.key === 'ArrowDown') this.goToLast();
         });
 
-        // Скрываем индикатор просмотра по умолчанию
-        document.getElementById('viewingIndicator').style.display = 'none';
+        // Кнопка вставки PGN
+        document.getElementById('pastePgnBtn')?.addEventListener('click', () => this.pastePgn());
     }
 
-    initMovesList() {
-        this.movesListEl = document.getElementById('movesList');
-    }
-
-    addMove(moveData) {
-        // Проверяем, есть ли уже такой ход среди детей текущего узла
-        const existingChild = this.currentNode.children.find(child =>
-            child.move.cellIndex === moveData.cellIndex
-        );
-
-        if (existingChild) {
-            // Если ход уже существует, переходим к нему
-            this.currentNode = existingChild;
-        } else {
-            // Создаем новый узел
-            const newNode = new MoveNode(moveData, this.currentNode);
-            this.currentNode.addChild(newNode);
-            this.currentNode = newNode;
+    /**
+     * Построить дерево из PGN строки
+     */
+    buildTreeFromPgn(pgn, startFen = null) {
+        if (!this.validatePgn(pgn)) {
+            alert('Неверный формат PGN. Должна быть строка из цифр 0-8.');
+            return false;
         }
 
-        this.updateMovesList();
-        this.updateNavigationButtons();
+        // Сбрасываем дерево
+        const initialFen = startFen || '04' + '0'.repeat(81);
+        this.root = new Node(null, initialFen, null, null);
+        this.currentNode = this.root;
+
+        // Применяем ходы
+        let currentNode = this.root;
+        
+        for (let i = 0; i < pgn.length; i++) {
+            const move = parseInt(pgn[i]);
+            const state = this.logic.parseFen(currentNode.fen);
+            const mark = state.step === 0 ? 'X' : 'O';
+
+            // Валидация хода
+            const validation = this.logic.isValidMove(currentNode.fen, move, state.activeMini);
+            if (!validation.valid) {
+                alert(`Ошибка на ходе ${i + 1}: ${validation.error}`);
+                return false;
+            }
+
+            // Применяем ход
+            const result = this.logic.applyMove(currentNode.fen, move);
+            if (!result) {
+                alert(`Не удалось применить ход ${i + 1}`);
+                return false;
+            }
+
+            // Добавляем узел
+            const newNode = currentNode.addChild(move, result.fen, mark);
+            newNode.winner = result.winner;
+            currentNode = newNode;
+
+            // Останавливаемся при победе
+            if (result.gameWon) {
+                break;
+            }
+        }
+
+        this.pgn = pgn;
+        this.currentNode = this.root;
+        this.updateBoard();
+        this.renderTree();
+        this.goToLast();
+        console.log("SUCCESS");
+        
+        return true;
     }
 
+    /**
+     * Валидация PGN
+     */
+    validatePgn(pgn) {
+        if (typeof pgn !== 'string') return false;
+        if (pgn.length === 0) return true; // Пустой PGN валиден
+        
+        // Проверяем что только цифры 0-8
+        return /^[0-8]+$/.test(pgn);
+    }
+
+    /**
+     * Добавить ход (создать ветку если нужно)
+     */
+    addMove(move) {
+        // Проверяем, завершена ли игра в текущем узле
+        if (this.currentNode.winner) {
+            alert('Игра уже завершена!');
+            return false;
+        }
+
+        const state = this.logic.parseFen(this.currentNode.fen);
+        
+        // Валидация
+        const validation = this.logic.isValidMove(this.currentNode.fen, move, state.activeMini);
+        if (!validation.valid) {
+            alert(validation.error);
+            return false;
+        }
+
+        // Проверяем, есть ли уже такой ход
+        let childNode = this.currentNode.findChild(move);
+        
+        if (!childNode) {
+            // Создаем новую ветку
+            const mark = state.step === 0 ? 'X' : 'O';
+            const result = this.logic.applyMove(this.currentNode.fen, move);
+            
+            if (!result) {
+                alert('Не удалось применить ход');
+                return false;
+            }
+
+            childNode = this.currentNode.addChild(move, result.fen, mark);
+            childNode.winner = result.winner;
+        }
+
+        // Переходим к узлу
+        this.currentNode = childNode;
+        this.updateBoard();
+        this.renderTree();
+        
+        return true;
+    }
+
+    /**
+     * Переход к узлу
+     */
     goToNode(node) {
         if (!node) return;
-
         this.currentNode = node;
-
-        // Восстанавливаем состояние доски
-        this.reconstructBoardToNode(node);
-
-        // Обновляем UI
-        this.updateMovesList();
-        this.updateNavigationButtons();
-        this.updateViewingIndicator();
+        this.updateBoard();
+        this.renderTree();
     }
 
-    goToStart() {
-        this.goToNode(this.root);
-        this.board.clear();
-        this.board.setActiveMini(4);
-        this.board.myMark = 'X';
-        document.getElementById('gameStatus').textContent = 'Ход игрока: X';
-    }
-
-    goToPreviousMove() {
-        if (this.currentNode.parent) {
-            this.goToNode(this.currentNode.parent);
+    /**
+     * Навигация
+     */
+    goBack() {
+        if (this.currentNode && this.currentNode.parent) {
+            this.currentNode = this.currentNode.parent;
+            this.updateBoard();
+            this.renderTree();
         }
     }
 
-    goToNextMove() {
-        if (this.currentNode.children.length > 0) {
-            // По умолчанию идем по первому варианту (основная линия)
-            this.goToNode(this.currentNode.children[0]);
+    goForward() {
+        // Идем по первому ребенку (главная линия)
+        if (this.currentNode && this.currentNode.children.length > 0) {
+            this.currentNode = this.currentNode.children[0];
+            this.updateBoard();
+            this.renderTree();
         }
     }
 
-    goToMainLineEnd() {
-        let current = this.root;
-        while (current.children.length > 0) {
-            current = current.children[0];
-        }
-        this.goToNode(current);
+    goToFirst() {
+        this.currentNode = this.root;
+        this.updateBoard();
+        this.renderTree();
     }
 
-    reconstructBoardToNode(node) {
-        // Получаем все ходы от корня до текущего узла
-        const moves = node.getAllMoves();
+    goToLast() {
+        // Идем до конца главной линии
+        if (!this.currentNode) this.currentNode = this.root;
+        
+        while (this.currentNode.children.length > 0) {
+            this.currentNode = this.currentNode.children[0];
+        }
+        this.updateBoard();
+        this.renderTree();
+    }
+
+    /**
+     * Обновить доску по текущему узлу
+     */
+    updateBoard() {
+        if (!this.currentNode) {
+            this.currentNode = this.root;
+        }
+        
+        const state = this.logic.parseFen(this.currentNode.fen);
+        if (!state) return;
 
         // Очищаем доску
         this.board.clear();
 
-        // Применяем все ходы
-        let activeMini = 4;
-
-        moves.forEach((moveNode, index) => {
-            const move = moveNode.move;
-
-            // Ставим метку
-            this.board.setMark(move.globalRow, move.globalCol, move.mark);
-
-            // Подсвечиваем последний ход
-            if (index === moves.length - 1) {
-                this.board.highlightLast(move.globalRow, move.globalCol);
-            }
-
-            activeMini = move.cellIndex;
-        });
-
-        // Устанавливаем активную мини-доску и текущего игрока
-        if (moves.length > 0) {
-            this.board.setActiveMini(activeMini);
-            const nextMark = (moves.length % 2 === 0) ? 'X' : 'O';
-            this.board.myMark = nextMark;
-            document.getElementById('gameStatus').textContent = `Ход игрока: ${nextMark}`;
-        } else {
-            this.board.setActiveMini(4);
-            this.board.myMark = 'X';
-            document.getElementById('gameStatus').textContent = 'Ход игрока: X';
-        }
-    }
-
-    updateMovesList() {
-        this.movesListEl.innerHTML = '';
-
-        // Рендерим дерево ходов рекурсивно
-        this.renderMovesTree(this.root);
-
-        // Подсвечиваем текущий ход
-        this.highlightCurrentMove();
-    }
-
-    renderMovesTree(node, isMainLine = true) {
-        // Для корневого узла обрабатываем только детей
-        if (!node.move) {
-            node.children.forEach((child, index) => {
-                this.renderMovesTree(child, index === 0);
-            });
-            return;
-        }
-
-        const depth = node.getDepth();
-        const moveNumber = node.getMoveNumber();
-        const isWhiteMove = node.move.mark === 'X';
-
-        // Для основной линии и начала вариантов с хода белых
-        if (isMainLine && isWhiteMove) {
-            // Создаем пару для основной линии
-            const pair = document.createElement('div');
-            pair.className = 'move-pair';
-            pair.dataset.moveNumber = moveNumber;
-
-            // Номер хода
-            const numEl = document.createElement('span');
-            numEl.className = 'move-number';
-            numEl.textContent = `${moveNumber}.`;
-            pair.appendChild(numEl);
-
-            // Ход белых
-            const whiteMove = this.createMoveElement(node);
-            pair.appendChild(whiteMove);
-
-            // Ход черных (если есть)
-            const blackChild = node.children.find(child => child.move.mark === 'O' && node.children.indexOf(child) === 0);
-            if (blackChild && isMainLine) {
-                const blackMove = this.createMoveElement(blackChild);
-                pair.appendChild(blackMove);
-
-                // Рендерим варианты после хода черных
-                this.renderVariantsAfterNode(blackChild);
-
-                // Продолжаем основную линию
-                blackChild.children.forEach((child, index) => {
-                    this.renderMovesTree(child, index === 0);
-                });
-            } else {
-                // Рендерим варианты после хода белых
-                this.renderVariantsAfterNode(node);
-
-                // Продолжаем основную линию
-                node.children.forEach((child, index) => {
-                    if (child.move.mark === 'X') {
-                        this.renderMovesTree(child, index === 0);
-                    }
-                });
-            }
-
-            this.movesListEl.appendChild(pair);
-
-        } else if (!isMainLine) {
-            // Это вариант - рендерим как отдельную линию
-            this.renderVariationLine(node);
-        }
-    }
-
-    renderVariantsAfterNode(node) {
-        // Рендерим все варианты (кроме первого ребенка)
-        node.children.forEach((child, index) => {
-            if (index > 0) {
-                this.renderVariationLine(child);
-            }
-        });
-    }
-
-    renderVariationLine(startNode) {
-        const depth = startNode.getDepth();
-        let container = document.createElement('div');
-        container.className = 'variation-container';
-        container.style.marginLeft = `${depth * 20}px`;
-
-        let line = document.createElement('div');
-        line.className = 'variation-line';
-
-        // Добавляем вертикальную линию для вложенных вариантов
-        if (depth > 1) {
-            container.classList.add('nested-variation');
-        }
-
-        let current = startNode;
-        let moveNumber = current.getMoveNumber();
-        let isFirst = true;
-
-        while (current) {
-            // Добавляем номер хода
-            if (isFirst && current.move.mark === 'O') {
-                const dots = document.createElement('span');
-                dots.className = 'move-number';
-                dots.textContent = `${moveNumber}...`;
-                line.appendChild(dots);
-            } else if (current.move.mark === 'X') {
-                const numEl = document.createElement('span');
-                numEl.className = 'move-number';
-                numEl.textContent = `${moveNumber}.`;
-                line.appendChild(numEl);
-            }
-
-            // Добавляем сам ход
-            const moveEl = this.createMoveElement(current);
-            line.appendChild(moveEl);
-
-            if (current.move.mark === 'O') {
-                moveNumber++;
-            }
-
-            // Рендерим подварианты текущего хода
-            if (current.children.length > 1) {
-                // Добавляем текущую линию в контейнер
-                container.appendChild(line);
-                this.movesListEl.appendChild(container);
-
-                // Рендерим подварианты
-                current.children.forEach((child, index) => {
-                    if (index > 0) {
-                        this.renderVariationLine(child);
-                    }
-                });
-
-                // Создаем новый контейнер для продолжения
-                const newContainer = document.createElement('div');
-                newContainer.className = 'variation-container';
-                newContainer.style.marginLeft = `${depth * 20}px`;
-
-                const newLine = document.createElement('div');
-                newLine.className = 'variation-line';
-
-                container = newContainer;
-                line = newLine;
-            }
-
-            isFirst = false;
-            current = current.children.length > 0 ? current.children[0] : null;
-        }
-
-        // Добавляем оставшуюся линию
-        if (line.children.length > 0) {
-            container.appendChild(line);
-            this.movesListEl.appendChild(container);
-        }
-    }
-
-    createMoveElement(node) {
-        const moveEl = document.createElement('span');
-        moveEl.className = 'move-item';
-        moveEl.dataset.nodeId = this.getNodeId(node);
-
-        const notation = `${node.move.mark}:${node.move.cellIndex + 1}`;
-        moveEl.textContent = notation;
-
-        // Обработчик клика
-        moveEl.addEventListener('click', () => this.goToNode(node));
-
-        return moveEl;
-    }
-
-    getNodeId(node) {
-        // Генерируем уникальный ID для узла на основе пути от корня
-        const path = [];
-        let current = node;
-        while (current.parent) {
-            const index = current.parent.children.indexOf(current);
-            path.unshift(index);
-            current = current.parent;
-        }
-        return path.join('-');
-    }
-
-    highlightCurrentMove() {
-        // Убираем подсветку со всех ходов
-        this.movesListEl.querySelectorAll('.move-item').forEach(el => {
-            el.classList.remove('current');
-        });
-
-        // Подсвечиваем текущий ход
-        if (this.currentNode.move) {
-            const currentId = this.getNodeId(this.currentNode);
-            const currentEl = this.movesListEl.querySelector(`[data-node-id="${currentId}"]`);
-            if (currentEl) {
-                currentEl.classList.add('current');
-                currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        }
-    }
-
-    updateViewingIndicator() {
-        const indicator = document.getElementById('viewingIndicator');
-        const moveNumSpan = document.getElementById('viewingMoveNum');
-
-        const allMoves = this.currentNode.getAllMoves();
-        const mainLine = this.root.getMainLine();
-        const isViewingHistory = this.currentNode !== mainLine[mainLine.length - 1] && mainLine.length > 0;
-
-        if (isViewingHistory) {
-            indicator.style.display = 'block';
-            moveNumSpan.textContent = `${allMoves.length} из ${mainLine.length}`;
-        } else {
-            indicator.style.display = 'none';
-        }
-    }
-
-    updateNavigationButtons() {
-        const hasPrevious = this.currentNode.parent !== null;
-        const hasNext = this.currentNode.children.length > 0;
-
-        document.getElementById('navFirst').disabled = !hasPrevious;
-        document.getElementById('navPrev').disabled = !hasPrevious;
-        document.getElementById('navNext').disabled = !hasNext;
-        document.getElementById('navLast').disabled = this.currentNode === this.root.getMainLine()[this.root.getMainLine().length - 1] || this.root.children.length === 0;
-    }
-}
-
-// Класс Board остается без изменений
-class Board {
-    constructor(root, opts = {}) {
-        this.el = typeof root === 'string' ? document.querySelector(root) : root;
-        if (!this.el) throw new Error('Board root not found');
-        this.onMove = opts.onMove || null;
-        this.myMark = (opts.myMark === 'O') ? 'O' : 'X';
-        this.activeMini = (typeof opts.activeMini === 'number') ? opts.activeMini : 4;
-        this.map();
-        this.setActiveMini(this.activeMini);
-        this.attach();
-    }
-
-    map() {
-        this.cellMap = {};
-        this.minis = Array.from(this.el.querySelectorAll('.mini'));
-        this.el.querySelectorAll('.cell').forEach(cell => {
-            const r = +cell.dataset.row, c = +cell.dataset.col;
-            this.cellMap[`${r}-${c}`] = cell;
-        });
-    }
-
-    getCell(r, c) {
-        return this.cellMap[`${r}-${c}`];
-    }
-
-    getMark(r, c) {
-        const cell = this.getCell(r, c);
-        return cell?.querySelector('.mark')?.dataset.mark || '';
-    }
-
-    setMark(r, c, mark) {
-        const cell = this.getCell(r, c);
-        if (!cell) return;
-        const markEl = cell.querySelector('.mark');
-        if (mark === 'X' || mark === 'O') {
-            markEl.dataset.mark = mark;
-            markEl.textContent = mark;
-            cell.classList.add('taken');
-        } else {
-            markEl.textContent = '';
-            delete markEl.dataset.mark;
-            cell.classList.remove('taken');
-        }
-    }
-
-    clear() {
-        Object.keys(this.cellMap).forEach(key => {
-            const [r, c] = key.split('-').map(Number);
-            this.setMark(r, c, '');
-        });
-        this.clearHighlights();
-        this.minis.forEach(m => delete m.dataset.won);
-    }
-
-    serialize() {
-        let s = '';
-        for (let r = 0; r < 9; r++) {
-            for (let c = 0; c < 9; c++) {
-                const m = this.getMark(r, c);
-                s += (m === 'X' || m === 'O') ? m : '.';
-            }
-        }
-        return s;
-    }
-
-    setActiveMini(idx) {
-        this.activeMini = (typeof idx === 'number') ? idx : -1;
-
-        this.minis.forEach((mini, i) => {
-            const shouldBeActive = (this.activeMini === -1 || i === this.activeMini);
-            const shouldBeDisabled = (this.activeMini !== -1 && i !== this.activeMini);
-
-            if (shouldBeActive) {
-                mini.classList.add('active');
-            } else {
-                mini.classList.remove('active');
-            }
-
-            if (shouldBeDisabled) {
-                mini.classList.add('disabled');
-            } else {
-                mini.classList.remove('disabled');
-            }
-        });
-    }
-
-    clearHighlights() {
-        this.el.querySelectorAll('.cell.highlight').forEach(cell => cell.classList.remove('highlight'));
-    }
-
-    highlightLast(r, c) {
-        this.clearHighlights();
-        const cell = this.getCell(r, c);
-        if (cell) cell.classList.add('highlight');
-    }
-
-    attach() {
-        this.el.addEventListener('click', async (e) => {
-            const cell = e.target.closest('.cell');
-            if (!cell || !this.el.contains(cell)) return;
-
-            const r = +cell.dataset.row;
-            const c = +cell.dataset.col;
-            const mini = +cell.dataset.mini;
-
-            // Проверяем, можно ли сделать ход
-            if (this.activeMini !== -1 && mini !== this.activeMini) return;
-            if (this.getMark(r, c)) return;
-
-            // Вычисляем индекс клетки внутри мини-доски
-            const cellIndex = 3 * (r % 3) + (c % 3);
-
-            // Создаем данные о ходе
-            const moveData = {
-                cellIndex: cellIndex,
-                mark: this.myMark,
-                activeMini: mini,
-                globalRow: r,
-                globalCol: c
-            };
-
-            if (this.onMove) {
-                try {
-                    const res = await this.onMove(moveData);
-                    if (res === true) {
-                        // Делаем ход на доске
-                        this.setMark(r, c, this.myMark);
-                        this.highlightLast(r, c);
-
-                        // Добавляем ход в дерево
-                        window.movesTreeManager.addMove(moveData);
-
-                        // Меняем активного игрока
-                        this.myMark = (this.myMark === 'O') ? 'X' : 'O';
-
-                        // Устанавливаем следующую активную мини-доску
-                        this.setActiveMini(cellIndex);
-
-                        // Обновляем статус
-                        document.getElementById('gameStatus').textContent = `Ход игрока: ${this.myMark}`;
-                    }
-                } catch (err) {
-                    console.error('onMove error', err);
+        // Расставляем фигуры
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                if (state.grid[i][j]) {
+                    this.board.setMark(i, j, state.grid[i][j]);
                 }
             }
-        });
-    }
-}
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    const init = window.INIT || {};
-    let movesTreeManager = null;
-
-    // Создаем доску
-    const board = new Board('#Board', {
-        myMark: init.myMark || 'X',
-        activeMini: typeof init.activeMini === 'number' ? init.activeMini : 4,
-        onMove: async (moveData) => {
-            // В режиме анализа всегда разрешаем ходы
-            return true;
         }
-    });
 
-    window.board = board;
+        // Подсвечиваем последний ход
+        if (this.currentNode.move !== null && this.currentNode.parent) {
+            const parentState = this.logic.parseFen(this.currentNode.parent.fen);
+            const miniRow = Math.floor(parentState.activeMini / 3);
+            const miniCol = parentState.activeMini % 3;
+            const cellRow = Math.floor(this.currentNode.move / 3);
+            const cellCol = this.currentNode.move % 3;
+            const globalRow = miniRow * 3 + cellRow;
+            const globalCol = miniCol * 3 + cellCol;
+            
+            this.board.highlightLast(globalRow, globalCol);
+        }
 
-    // Создаем менеджер дерева ходов
-    movesTreeManager = new MovesTreeManager(board);
-    window.movesTreeManager = movesTreeManager;
+        // Устанавливаем активную минидоску для анализа
+        // Показываем какая минидоска должна быть активна
+        if (!this.currentNode.winner) {
+            this.board.setActiveMini(state.activeMini);
+        } else {
+            // Если игра закончена, блокируем все
+            this.board.setActiveMini(-2);
+        }
 
-    // Обработчик кнопки "Insert position"
-    const insertBtn = document.getElementById('insert-position-btn');
-    if (insertBtn) {
-        insertBtn.addEventListener('click', () => {
-            const fen = prompt('Введите FEN позицию:');
-            if (fen && fen.length === 82) {
-                loadPositionFromFEN(fen);
+        // Обновляем статус
+        this.updateStatus();
+        
+        // Обновляем PGN в board для копирования
+        this.board.pgn = this.getCurrentPgn();
+        this.pgn = this.board.pgn;
+    }
+
+    /**
+     * Обновить статус игры
+     */
+    updateStatus() {
+        const statusEl = document.getElementById('gameStatus');
+        if (!statusEl) return;
+
+        if (this.currentNode.winner) {
+            statusEl.textContent = `Победил ${this.currentNode.winner}!`;
+        } else {
+            const state = this.logic.parseFen(this.currentNode.fen);
+            const nextMark = state.step === 0 ? 'X' : 'O';
+            statusEl.textContent = `Ход: ${nextMark}`;
+        }
+    }
+
+    /**
+     * Рендеринг дерева ходов
+     */
+    renderTree() {
+        const container = document.getElementById('movesTree');
+        if (!container) return;
+
+        container.innerHTML = '';
+        
+        // Рендерим главную линию парами
+        this.renderMainLine(this.root, container);
+        
+        // Прокручиваем к текущему ходу
+        const currentEl = container.querySelector('.move-item.current');
+        if (currentEl) {
+            currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    /**
+     * Рендеринг главной линии (парами X-O)
+     */
+    renderMainLine(node, container) {
+        if (node.children.length === 0) return;
+
+        let currentNode = node.children[0]; // Первый ребенок = главная линия
+        let depth = 0;
+
+        while (currentNode) {
+            const isXMove = depth % 2 === 0;
+
+            if (isXMove) {
+                // Начинаем новую пару (main-move)
+                const mainMoveDiv = document.createElement('div');
+                mainMoveDiv.className = 'main-move';
+
+                const mainLineDiv = document.createElement('div');
+                mainLineDiv.className = 'main-line';
+
+                const moveNum = Math.floor(depth / 2) + 1;
+
+                // Сохраняем ссылку на узел X для замыкания
+                const nodeX = currentNode;
+                
+                // Ход X (с номером хода)
+                const moveSpanX = document.createElement('span');
+                moveSpanX.className = 'move-item';
+                const checkmarkX = nodeX.winner === nodeX.mark ? '#' : '';
+                moveSpanX.textContent = `${moveNum}.${nodeX.mark}:${nodeX.move+1}${checkmarkX}`;
+                moveSpanX.dataset.mark = nodeX.mark;
+
+                if (nodeX === this.currentNode) {
+                    moveSpanX.classList.add('current');
+                }
+
+                moveSpanX.addEventListener('click', () => this.goToNode(nodeX));
+                mainLineDiv.appendChild(moveSpanX);
+
+                // Альтернативы для X
+                const altXNodes = nodeX.children.slice(1);
+
+                // Проверяем есть ли ход O
+                if (nodeX.children.length > 0) {
+                    const nodeO = nodeX.children[0];
+
+                    // Ход O
+                    const moveSpanO = document.createElement('span');
+                    moveSpanO.className = 'move-item';
+                    const checkmarkO = nodeO.winner === nodeO.mark ? '#' : '';
+                    moveSpanO.textContent = `${nodeO.mark}:${nodeO.move+1}${checkmarkO}`;
+                    moveSpanO.dataset.mark = nodeO.mark;
+
+                    if (nodeO === this.currentNode) {
+                        moveSpanO.classList.add('current');
+                    }
+
+                    moveSpanO.addEventListener('click', () => this.goToNode(nodeO));
+                    mainLineDiv.appendChild(moveSpanO);
+
+                    mainMoveDiv.appendChild(mainLineDiv);
+
+                    // Альтернативы для X
+                    for (const altNode of altXNodes) {
+                        this.renderAltMove(altNode, mainMoveDiv, depth + 1);
+                    }
+
+                    // Альтернативы для O
+                    const altONodes = nodeO.children.slice(1);
+                    for (const altNode of altONodes) {
+                        this.renderAltMove(altNode, mainMoveDiv, depth + 2);
+                    }
+
+                    container.appendChild(mainMoveDiv);
+
+                    // Продолжаем главную линию с детей O
+                    currentNode = nodeO.children.length > 0 ? nodeO.children[0] : null;
+                    depth += 2;
+                } else {
+                    // Только X, нет O
+                    mainMoveDiv.appendChild(mainLineDiv);
+
+                    // Альтернативы для X
+                    for (const altNode of altXNodes) {
+                        this.renderAltMove(altNode, mainMoveDiv, depth + 1);
+                    }
+
+                    container.appendChild(mainMoveDiv);
+                    currentNode = null;
+                }
+            } else {
+                // Если начинается с O (не должно быть в главной линии, но на всякий случай)
+                currentNode = currentNode.children.length > 0 ? currentNode.children[0] : null;
+                depth++;
             }
-        });
-    }
-
-    // Если есть начальная позиция, загружаем её
-    if (init.initialPgn) {
-        loadInitialPGN(init.initialPgn);
-    }
-});
-
-// Функция загрузки позиции из FEN
-function loadPositionFromFEN(fen) {
-    // FEN формат: 81 символ для доски + 1 символ для активной мини-доски
-    const boardState = fen.substring(0, 81);
-    const activeMini = parseInt(fen[81]);
-
-    // Очищаем текущее дерево
-    window.movesTreeManager = new MovesTreeManager(window.board);
-
-    // Устанавливаем позицию на доске
-    for (let i = 0; i < 81; i++) {
-        const r = Math.floor(i / 9);
-        const c = i % 9;
-        const mark = boardState[i];
-        if (mark === 'X' || mark === 'O') {
-            window.board.setMark(r, c, mark);
         }
     }
 
-    // Устанавливаем активную мини-доску
-    window.board.setActiveMini(activeMini);
+    /**
+     * Рендеринг альтернативного хода (рекурсивно)
+     */
+    renderAltMove(node, container, depth) {
+        const altMoveDiv = document.createElement('div');
+        altMoveDiv.className = 'alt-move';
 
-    // Определяем, чей ход (считаем количество X и O)
-    let xCount = 0, oCount = 0;
-    for (let char of boardState) {
-        if (char === 'X') xCount++;
-        else if (char === 'O') oCount++;
+        const mainLineDiv = document.createElement('div');
+        mainLineDiv.className = 'main-line';
+
+        // Вычисляем номер хода и префикс
+        let moveNum = Math.floor(depth / 2) + 1;
+        const isXMove = depth % 2 === 0;
+        const movePrefix = isXMove ? `` : `..`;
+
+        // Собираем всю линию (первые дети) и их альтернативы
+        const nodesInLine = [];
+        let currentNode = node;
+        let currentDepth = depth;
+
+        while (currentNode) {
+            nodesInLine.push({
+                node: currentNode,
+                depth: currentDepth
+            });
+            currentNode = currentNode.children.length > 0 ? currentNode.children[0] : null;
+            currentDepth++;
+        }
+
+        // Рендерим все ходы в main-line
+        for (let i = 0; i < nodesInLine.length; i++) {
+            const {node: nodeRef} = nodesInLine[i];
+            const moveSpan = document.createElement('span');
+            moveSpan.className = 'move-item';
+            const checkmark = nodeRef.winner === nodeRef.mark ? '#' : '';
+            // Добавляем номер хода только к первому элементу
+            const prefix = (i === 0) ? movePrefix : '';
+            let moveNumText = "";
+            if (nodeRef.mark === 'X') {
+                moveNumText = `${moveNum}.`; 
+                moveNum += 1;
+            }
+            moveSpan.textContent = `${moveNumText}${prefix}${nodeRef.mark}:${nodeRef.move+1}${checkmark}`;
+            moveSpan.dataset.mark = nodeRef.mark;
+
+            if (nodeRef === this.currentNode) {
+                moveSpan.classList.add('current');
+            }
+
+            moveSpan.addEventListener('click', () => this.goToNode(nodeRef));
+            mainLineDiv.appendChild(moveSpan);
+        }
+
+        // Добавляем main-line в alt-move
+        altMoveDiv.appendChild(mainLineDiv);
+
+        // Теперь рекурсивно рендерим альтернативы для всех узлов в линии
+        for (const {node: nodeRef, depth: nodeDepth} of nodesInLine) {
+            const altNodes = nodeRef.children.slice(1);
+            for (const altNode of altNodes) {
+                this.renderAltMove(altNode, altMoveDiv, nodeDepth + 1);
+            }
+        }
+
+        container.appendChild(altMoveDiv);
     }
 
-    window.board.myMark = xCount > oCount ? 'O' : 'X';
-    document.getElementById('gameStatus').textContent = `Ход игрока: ${window.board.myMark}`;
+    /**
+     * Вставить PGN из буфера обмена
+     */
+    async pastePgn() {
+        try {
+            const text = await navigator.clipboard.readText();
+            const pgn = text.trim();
+            
+            if (pgn.length === 0) {
+                alert('Буфер обмена пуст');
+                return;
+            }
+
+            this.buildTreeFromPgn(pgn);
+        } catch (err) {
+            console.error('Ошибка чтения буфера обмена:', err);
+            alert('Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ.');
+        }
+    }
+
+    /**
+     * Получить текущий PGN (главная линия)
+     */
+    getCurrentPgn() {
+        const path = this.currentNode.getPath();
+        return path.map(node => node.move).join('');
+    }
 }
 
-// Функция загрузки начальной PGN
-function loadInitialPGN(pgn) {
-    if (!pgn) return;
-
-    // Преобразуем PGN в последовательность ходов
-    const moves = pgn.split('').map(n => parseInt(n));
-    let currentMark = 'X';
-    let activeMini = 4;
-
-    moves.forEach((cellIndex) => {
-        // Вычисляем координаты
-        const miniRow = Math.floor(activeMini / 3);
-        const miniCol = activeMini % 3;
-        const cellRow = Math.floor(cellIndex / 3);
-        const cellCol = cellIndex % 3;
-
-        // Глобальные координаты
-        const globalRow = miniRow * 3 + cellRow;
-        const globalCol = miniCol * 3 + cellCol;
-
-        // Создаем данные о ходе
-        const moveData = {
-            cellIndex: cellIndex,
-            mark: currentMark,
-            activeMini: activeMini,
-            globalRow: globalRow,
-            globalCol: globalCol
-        };
-
-        // Добавляем ход в дерево
-        window.movesTreeManager.addMove(moveData);
-
-        // Обновляем для следующего хода
-        activeMini = cellIndex;
-        currentMark = currentMark === 'X' ? 'O' : 'X';
-    });
-
-    // Переходим к последнему ходу
-    window.movesTreeManager.goToMainLineEnd();
-}
-
-// CSS стили для вариантов
-const styles = `
-<style>
-.moves-list {
-    font-family: monospace;
-    font-size: 14px;
-    padding: 10px;
-    max-height: 400px;
-    overflow-y: auto;
-    overflow-x: auto;
-}
-
-.move-pair {
-    display: flex;
-    align-items: center;
-    margin: 2px 0;
-    min-height: 24px;
-}
-
-.move-number {
-    color: #666;
-    margin-right: 8px;
-    min-width: 30px;
-}
-
-.move-item {
-    padding: 2px 6px;
-    margin: 0 4px;
-    cursor: pointer;
-    border-radius: 3px;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-}
-
-.move-item:hover {
-    background-color: #f0f0f0;
-}
-
-.move-item.current {
-    background-color: #e3f2fd;
-    font-weight: bold;
-}
-
-.variation-container {
-    position: relative;
-    margin: 2px 0;
-}
-
-.variation-line {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    padding: 2px 0;
-    padding-left: 8px;
-    border-left: 2px solid #ddd;
-}
-
-.nested-variation > .variation-line {
-    border-left-color: #bbb;
-}
-
-.variation-container.nested-variation::before {
-    content: '';
-    position: absolute;
-    left: -2px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, #ddd 50%, transparent 50%);
-    background-size: 2px 8px;
-}
-
-.variation-line .move-item {
-    font-size: 13px;
-    color: #555;
-}
-
-.variation-line .move-number {
-    font-size: 13px;
-}
-
-.viewing-indicator {
-    margin-top: 10px;
-    padding: 8px;
-    background-color: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    text-align: center;
-    font-size: 13px;
-}
-
-.moves-nav {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 10px;
-}
-
-.moves-nav button {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #ccc;
-    background: #fff;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.moves-nav button:hover:not(:disabled) {
-    background: #f0f0f0;
-}
-
-.moves-nav button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.moves-nav button svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* Предотвращаем перенос строк в вариантах */
-.variation-line {
-    white-space: nowrap;
-}
-
-/* Стиль для глубоко вложенных вариантов */
-.variation-container[style*="margin-left: 60px"] .variation-line {
-    border-left-style: dotted;
-}
-
-.variation-container[style*="margin-left: 80px"] .variation-line {
-    border-left-style: dashed;
-    opacity: 0.9;
-}
-
-.variation-container[style*="margin-left: 100px"] .variation-line {
-    opacity: 0.8;
-}
-</style>
-`;
-
-// Добавляем стили в документ
-document.head.insertAdjacentHTML('beforeend', styles);
+// Экспорт для глобального использования
+window.GameLogic = GameLogic;
+window.Node = Node;
+window.AnalysisManager = AnalysisManager;
