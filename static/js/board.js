@@ -7,14 +7,19 @@
             this.onMove = opts.onMove || null;
             this.myMark = (opts.myMark === 'O') ? 'O' : 'X';
             this.activeMini = (typeof opts.activeMini === 'number') ? opts.activeMini : -1;
+            this.pgn = "";
             this.map();
             this.setActiveMini(this.activeMini);
             this.attach();
-            document.getElementById("copyPositionBtn").addEventListener("click", () => {
-                navigator.clipboard.writeText(this.getFen()).then(r => {
-                    console.log(r);
+            
+            const copyFenBtn = document.getElementById("copyPositionBtn");
+            if (copyFenBtn) {
+                copyFenBtn.addEventListener("click", () => {
+                    navigator.clipboard.writeText(this.pgn).then(r => {
+                        console.log(r);
+                    });
                 });
-            })
+            }
         }
 
         map() {
@@ -30,7 +35,7 @@
             console.log("GRID", this.grid);
             let status = document.getElementById('gameStatus').textContent;
             let nextMark = status[status.length - 1];
-            let lastMove = this.pgn[this.pgn.length-1];
+            let lastMove = this.pgn.length > 0 ? this.pgn[this.pgn.length-1] : '4';
             let fen = nextMark === 'X' ? '0' : '1' + lastMove;
             console.log(fen);
             for (let i = 0; i < 9; i++) {

@@ -332,8 +332,18 @@ def on_invite(game_id: int):
 @app.route("/analysis")
 @validator({})
 @auth_player
-def analysis():
-    return render_template("analysis.html", game=games[-3], player=players[session.get("player_id")])
+def on_analysis():
+    print(f"{request.args = }")
+    game_id = request.args.get('game_id', type=int)
+    game = None
+    
+    if isinstance(game_id, int) and game_id > 0:
+        try:
+            game = games[game_id]
+        except (IndexError, KeyError):
+            pass  # Игра не найдена, game остается None
+    
+    return render_template("analysis.html", game=game, player=players[session.get("player_id")])
 
 
 @app.route("/all_games")

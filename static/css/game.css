@@ -108,3 +108,9 @@
 .viewing-indicator.show {
   display: block;
 }
+
+
+.nickname {
+  display: flex;
+  gap: 5px;
+}

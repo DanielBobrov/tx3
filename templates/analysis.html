@@ -5,14 +5,14 @@
 
 {% block content %}
     <link rel="stylesheet" href="/static/css/game.css">
+    <link rel="stylesheet" href="/static/css/analysis.css">
     <section class="game-layout">
         <div class="board-col">
             <div class="player top">
-                <div class="user">
-                    X: {{ render_player_username(game.players[0], players) }}
-                    {#        <span class="rating muted">{{ game.player_o.rating if game else '' }}</span>#}
+                <div class="nickname">
+                    X: {{ render_player_username(game.players[0] if game else None, players) if game else 'Игрок 1' }}
                 </div>
-                {% if game.use_time %}
+                {% if game and game.use_time %}
                     <div class="time">
                         {% if game.players[1] == player.id %}
                             <div class="btn" id="addTimeBtn">+</div>
@@ -27,12 +27,10 @@
             </div>
 
             <div class="player bottom">
-                <div class="user">
-                    O: {{ render_player_username(game.players[1], players) }}
-                    {#        <span class="rating muted">{{ game.player_x.rating if game else '' }}</span>#}
+                <div class="nickname">
+                    O: {{ render_player_username(game.players[1] if game else None, players) if game else 'Игрок 2' }}
                 </div>
-                {#                <div class="clock" id="clockO">{{ "%.2f"|format((x_time_ms or 300000)/60000) }}'</div>#}
-                {% if game.use_time %}
+                {% if game and game.use_time %}
                     <div class="time">
                         {% if game.players[0] == player.id %}
                             <div class="btn" id="addTimeBtn">+</div>
@@ -52,18 +50,17 @@
         <aside class="side-col">
             <div class="panel moves">
                 <div class="panel-head">
-                    <h3>Ходы</h3>
-                    <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
+                    <h3>Анализ</h3>
+                    <div class="muted" id="gameStatus">Ход: X</div>
                 </div>
-                <div class="moves-list" id="movesList"></div>
+                <div id="movesTree"></div>
                 <div class="navigation-controls"></div>
                 <div class="moves-nav">
                     <div></div>
-                    <button class="btn"
-                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}">Copy
-                        position
+                    <button class="btn" id="copyPositionBtn" title="Скопировать PGN">
+                        Скопировать PGN
                     </button>
-                    <div></div>
+                    <div class="nav-spacer"></div>
                     <button id="navFirst" title="В начало">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
@@ -85,47 +82,67 @@
                         </svg>
                     </button>
                     <div></div>
-                    {% if spectator %}
-                        <div></div>{% else %}
-                        <button class="btn" id="insert-position-btn">Insert position</button>{% endif %}
+                    <button class="btn" id="pastePgnBtn" title="Вставить PGN из буфера">
+                        Вставить PGN
+                    </button>
                     <div></div>
-                </div>
-                <div class="viewing-indicator" id="viewingIndicator" style="display: none !important;">
-                    Просмотр хода <span id="viewingMoveNum"></span>
                 </div>
             </div>
         </aside>
-        {#        <aside class="side-col">#}
-        {#            <div class="panel moves">#}
-        {#                <div class="panel-head">#}
-        {#                    <h3>Ходы</h3>#}
-        {#                    <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>#}
-        {#                </div>#}
-        {#                <ol class="moves-list" id="movesList"></ol>#}
-        {#            </div>#}
-        {##}
-        {#    <div class="panel chat">#}
-        {#      <div class="panel-head"><h3>Чат</h3></div>#}
-        {#      <div class="chat-log" id="chatLog"></div>#}
-        {#      <div class="chat-input">#}
-        {#        <input type="text" id="chatMsg" placeholder="Сообщение...">#}
-        {#        <button class="btn small" id="chatSend">Отправить</button>#}
-        {#      </div>#}
-        {#    </div>#}
-        {#        </aside>#}
     </section>
 {% endblock %}
 
 {% block scripts %}
-{#    <script src="/static/js/moves_history.js"></script>#}
+    <script src="/static/js/board.js"></script>
     <script src="/static/js/analysis.js"></script>
     <script>
         None = null;
+        
+        // Получаем game_id из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game_id');
+        
+        let initialPgn = '';
+        let initialFen = '';
+        
+        {% if game %}
+            initialPgn = "{{ game.pgn if game.pgn else '' }}";
+            initialFen = "{{ game.fen if game.fen else '04' + '0'*81 }}";
+        {% endif %}
+        
         window.INIT = {
+            gameId: gameId,
             myMark: "X",
-            fen: "{{ "0"*82 }}",
-            initialPgn: "",
+            fen: initialFen,
+            initialPgn: initialPgn,
             activeMini: 4,
         };
+        
+        // Инициализация после загрузки DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            // Создаем доску
+            const board = new Board('#Board', {
+                myMark: 'X',
+                activeMini: -2, // Блокируем все в режиме анализа
+                onMove: async (moveData) => {
+                    // Обработка кликов через AnalysisManager
+                    if (window.analysisManager) {
+                        // Вычисляем индекс клетки внутри мини-доски (0-8)
+                        // row и col - глобальные координаты (0-8)
+                        const cellIndex = 3 * (moveData.row % 3) + (moveData.col % 3);
+                        return window.analysisManager.addMove(cellIndex);
+                    }
+                    return false;
+                }
+            });
+            
+            // Создаем менеджер анализа
+            window.analysisManager = new AnalysisManager(board, window.INIT.fen);
+            
+            // Загружаем партию если есть
+            if (window.INIT.initialPgn && window.INIT.initialPgn.length > 0) {
+                window.analysisManager.buildTreeFromPgn(window.INIT.initialPgn, null);
+            }
+        });
     </script>
 {% endblock %}
