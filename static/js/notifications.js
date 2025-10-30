@@ -14,7 +14,9 @@ class NotificationsManager {
     moveNotification(username) {
         console.log("NOTIFICATION", window.visible, document.hidden);
         if (!document.hidden) {
-            const notification = new Notification("Кресты-обручи", {body: `${username} сделал ход`});
+            const notification = new Notification(window.i18n.t('notification.title'), {
+                body: `${username} ${window.i18n.t('notification.made_move')}`
+            });
         }
     }
 }
