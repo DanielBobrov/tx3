@@ -1,18 +1,27 @@
 {
   "game": {
     "already_finished": "Игра уже завершена!",
-    "invalid_pgn": "Неверный формат PGN. Должна быть строка из цифр 0-8.",
-    "error_on_move": "Ошибка на ходе {move}: {error}",
-    "failed_to_apply_move": "Не удалось применить ход {move}",
-    "failed_to_apply": "Не удалось применить ход",
     "won": "Победил {winner}!",
-    "turn": "Ход: {mark}",
-    "clipboard_empty": "Буфер обмена пуст",
-    "clipboard_error": "Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ."
+    "move": "Ход: {mark}"
   },
-  "notifications": {
-    "title": "Кресты-обручи",
-    "move_made": "{username} сделал ход"
+  "pgn": {
+    "invalid_format": "Неверный формат PGN. Должна быть строка из цифр 0-8.",
+    "error_at_move": "Ошибка на ходе {move}: {error}",
+    "could_not_apply": "Не удалось применить ход {move}"
+  },
+  "clipboard": {
+    "empty": "Буфер обмена пуст",
+    "access_denied": "Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ."
+  },
+  "notification": {
+    "made_move": "сделал ход",
+    "title": "Кресты-обручи"
+  },
+  "nav": {
+    "first": "В начало",
+    "previous": "Предыдущий ход",
+    "next": "Следующий ход",
+    "last": "В конец"
   },
   "common": {
     "anonymous": "Аноним"

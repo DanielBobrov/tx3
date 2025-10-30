@@ -2,77 +2,91 @@
 class I18n {
     constructor(locale = 'ru') {
         this.locale = locale;
-        this.translations = {
-            ru: {
-                // Игровые сообщения
-                'game.already_finished': 'Игра уже завершена!',
-                'game.won': 'Победил',
-                'game.move': 'Ход:',
-                
-                // Ошибки PGN
-                'pgn.invalid_format': 'Неверный формат PGN. Должна быть строка из цифр 0-8.',
-                'pgn.error_at_move': 'Ошибка на ходе',
-                'pgn.could_not_apply': 'Не удалось применить ход',
-                
-                // Буфер обмена
-                'clipboard.empty': 'Буфер обмена пуст',
-                'clipboard.access_denied': 'Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ.',
-                
-                // Уведомления
-                'notification.made_move': 'сделал ход',
-                'notification.title': 'Кресты-обручи',
-                
-                // Навигация
-                'nav.first': 'В начало',
-                'nav.previous': 'Предыдущий ход',
-                'nav.next': 'Следующий ход',
-                'nav.last': 'В конец',
-            },
-            en: {
-                // Game messages
-                'game.already_finished': 'Game already finished!',
-                'game.won': 'Won',
-                'game.move': 'Move:',
-                
-                // PGN errors
-                'pgn.invalid_format': 'Invalid PGN format. Should be a string of digits 0-8.',
-                'pgn.error_at_move': 'Error at move',
-                'pgn.could_not_apply': 'Could not apply move',
-                
-                // Clipboard
-                'clipboard.empty': 'Clipboard is empty',
-                'clipboard.access_denied': 'Could not read clipboard. Make sure you allowed access.',
-                
-                // Notifications
-                'notification.made_move': 'made a move',
-                'notification.title': 'Tic-Tac-Toe',
-                
-                // Navigation
-                'nav.first': 'First',
-                'nav.previous': 'Previous move',
-                'nav.next': 'Next move',
-                'nav.last': 'Last',
-            }
-        };
+        this.translations = {};
+        this.loaded = false;
+        this.loadPromise = null;
     }
 
+    // Загрузка переводов из JSON
+    async loadTranslations(locale) {
+        if (this.translations[locale]) {
+            return; // Уже загружено
+        }
+
+        try {
+            const response = await fetch(`/static/locales/${locale}.json`);
+            if (!response.ok) {
+                console.error(`Failed to load translations for locale: ${locale}`);
+                return;
+            }
+            const data = await response.json();
+            this.translations[locale] = this.flattenObject(data);
+        } catch (error) {
+            console.error(`Error loading translations for ${locale}:`, error);
+        }
+    }
+
+    // Преобразование вложенного объекта в плоский с точечной нотацией
+    // {"game": {"won": "Победил"}} -> {"game.won": "Победил"}
+    flattenObject(obj, prefix = '') {
+        const result = {};
+        for (const key in obj) {
+            const newKey = prefix ? `${prefix}.${key}` : key;
+            if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                Object.assign(result, this.flattenObject(obj[key], newKey));
+            } else {
+                result[newKey] = obj[key];
+            }
+        }
+        return result;
+    }
+
+    // Инициализация - загрузка переводов для текущего языка
+    async init() {
+        if (this.loadPromise) {
+            return this.loadPromise;
+        }
+
+        this.loadPromise = this.loadTranslations(this.locale).then(() => {
+            this.loaded = true;
+        });
+
+        return this.loadPromise;
+    }
+
+    // Получение перевода с подстановкой параметров
     t(key, params = {}) {
+        if (!this.loaded) {
+            console.warn('Translations not loaded yet. Call i18n.init() first.');
+            return key;
+        }
+
         let translation = this.translations[this.locale]?.[key] || key;
         
-        // Подстановка параметров
+        // Подстановка параметров {name} -> значение
         Object.keys(params).forEach(param => {
-            translation = translation.replace(`{${param}}`, params[param]);
+            translation = translation.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
         });
         
         return translation;
     }
 
-    setLocale(locale) {
-        if (this.translations[locale]) {
-            this.locale = locale;
-        }
+    // Смена языка с загрузкой переводов
+    async setLocale(locale) {
+        this.locale = locale;
+        await this.loadTranslations(locale);
+        this.loaded = true;
     }
 }
 
 // Глобальная инстанция
 window.i18n = new I18n(window.LOCALE || 'ru');
+
+// Автоматическая инициализация при загрузке страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.i18n.init();
+    });
+} else {
+    window.i18n.init();
+}

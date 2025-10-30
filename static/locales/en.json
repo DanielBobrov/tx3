@@ -1,18 +1,27 @@
 {
   "game": {
     "already_finished": "Game is already finished!",
-    "invalid_pgn": "Invalid PGN format. Must be a string of digits 0-8.",
-    "error_on_move": "Error on move {move}: {error}",
-    "failed_to_apply_move": "Failed to apply move {move}",
-    "failed_to_apply": "Failed to apply move",
     "won": "{winner} won!",
-    "turn": "Turn: {mark}",
-    "clipboard_empty": "Clipboard is empty",
-    "clipboard_error": "Failed to read clipboard. Make sure you granted permission."
+    "move": "Turn: {mark}"
   },
-  "notifications": {
-    "title": "Tic-Tac-Toe",
-    "move_made": "{username} made a move"
+  "pgn": {
+    "invalid_format": "Invalid PGN format. Must be a string of digits 0-8.",
+    "error_at_move": "Error on move {move}: {error}",
+    "could_not_apply": "Failed to apply move {move}"
+  },
+  "clipboard": {
+    "empty": "Clipboard is empty",
+    "access_denied": "Failed to read clipboard. Make sure you granted permission."
+  },
+  "notification": {
+    "made_move": "made a move",
+    "title": "Tic-Tac-Toe"
+  },
+  "nav": {
+    "first": "First",
+    "previous": "Previous move",
+    "next": "Next move",
+    "last": "Last"
   },
   "common": {
     "anonymous": "Anonymous"
