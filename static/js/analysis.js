@@ -1,5 +1,9 @@
 // analysis.js - Система анализа партий с деревом вариантов
 
+import {Engine} from "/static/js/engine.js";
+
+
+
 // ===== КЛАСС 1: ИГРОВАЯ ЛОГИКА =====
 class GameLogic {
     constructor() {
@@ -288,7 +292,7 @@ class AnalysisManager {
      */
     buildTreeFromPgn(pgn, startFen = null) {
         if (!this.validatePgn(pgn)) {
-            alert('Неверный формат PGN. Должна быть строка из цифр 0-8.');
+            alert(window.i18n.t('pgn.invalid_format'));
             return false;
         }
 
@@ -308,14 +312,14 @@ class AnalysisManager {
             // Валидация хода
             const validation = this.logic.isValidMove(currentNode.fen, move, state.activeMini);
             if (!validation.valid) {
-                alert(`Ошибка на ходе ${i + 1}: ${validation.error}`);
+                alert(`${window.i18n.t('pgn.error_at_move')} ${i + 1}: ${validation.error}`);
                 return false;
             }
 
             // Применяем ход
             const result = this.logic.applyMove(currentNode.fen, move);
             if (!result) {
-                alert(`Не удалось применить ход ${i + 1}`);
+                alert(`${window.i18n.t('pgn.could_not_apply')} ${i + 1}`);
                 return false;
             }
 
@@ -357,7 +361,7 @@ class AnalysisManager {
     addMove(move) {
         // Проверяем, завершена ли игра в текущем узле
         if (this.currentNode.winner) {
-            alert('Игра уже завершена!');
+            alert(window.i18n.t('game.already_finished'));
             return false;
         }
 
@@ -379,7 +383,7 @@ class AnalysisManager {
             const result = this.logic.applyMove(this.currentNode.fen, move);
             
             if (!result) {
-                alert('Не удалось применить ход');
+                alert(window.i18n.t('pgn.could_not_apply'));
                 return false;
             }
 
@@ -503,11 +507,11 @@ class AnalysisManager {
         if (!statusEl) return;
 
         if (this.currentNode.winner) {
-            statusEl.textContent = `Победил ${this.currentNode.winner}!`;
+            statusEl.textContent = `${window.i18n.t('game.won')} ${this.currentNode.winner}!`;
         } else {
             const state = this.logic.parseFen(this.currentNode.fen);
             const nextMark = state.step === 0 ? 'X' : 'O';
-            statusEl.textContent = `Ход: ${nextMark}`;
+            statusEl.textContent = `${window.i18n.t('game.move')} ${nextMark}`;
         }
     }
 
@@ -704,14 +708,14 @@ class AnalysisManager {
             const pgn = text.trim();
             
             if (pgn.length === 0) {
-                alert('Буфер обмена пуст');
+                alert(window.i18n.t('clipboard.empty'));
                 return;
             }
 
             this.buildTreeFromPgn(pgn);
         } catch (err) {
             console.error('Ошибка чтения буфера обмена:', err);
-            alert('Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ.');
+            alert(window.i18n.t('clipboard.access_denied'));
         }
     }
 
@@ -728,3 +732,42 @@ class AnalysisManager {
 window.GameLogic = GameLogic;
 window.Node = Node;
 window.AnalysisManager = AnalysisManager;
+
+
+
+
+// =====================================================================================================================
+
+// const engine = new Engine();
+//
+// // запускаем/обновляем анализ каждый раз после хода игрока
+// function onUserMove(pgn) {
+//   engine.start(
+//     pgn,
+//     (score, depth) => console.log(`depth ${depth} → ${score}`),
+//     {maxDepth: 50}
+//   );
+// }
+//
+// // по желанию можно явно остановить
+// function onGameOver() {
+//   engine.stop();
+// }
+//
+// window.onUserMove = onUserMove;
+// window.onGameOver = onGameOver;
+
+
+import { GameEngine } from './engine/engine.js';
+const engine = new GameEngine();
+// // Загружаем позицию
+// engine.loadFen(fen);
+//
+// // Получаем оценку (глубина 4)
+// console.time("Evaluation time");
+// const evaluation = engine.getEvaluation(4);
+// console.timeEnd("Evaluation time");
+
+window.engine = engine;
+
+
