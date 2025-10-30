@@ -1,0 +1,20 @@
+{
+  "game": {
+    "already_finished": "Game is already finished!",
+    "invalid_pgn": "Invalid PGN format. Must be a string of digits 0-8.",
+    "error_on_move": "Error on move {move}: {error}",
+    "failed_to_apply_move": "Failed to apply move {move}",
+    "failed_to_apply": "Failed to apply move",
+    "won": "{winner} won!",
+    "turn": "Turn: {mark}",
+    "clipboard_empty": "Clipboard is empty",
+    "clipboard_error": "Failed to read clipboard. Make sure you granted permission."
+  },
+  "notifications": {
+    "title": "Tic-Tac-Toe",
+    "move_made": "{username} made a move"
+  },
+  "common": {
+    "anonymous": "Anonymous"
+  }
+}

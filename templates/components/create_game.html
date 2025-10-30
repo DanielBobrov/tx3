@@ -1,17 +1,17 @@
-<a href="#" onclick="openModal(event)" class="btn">Создать игру</a>
+<a href="#" onclick="openModal(event)" class="btn">{{ _('create_game.title') }}</a>
 
 <!-- Модальное окно создания игры -->
 <div id="createGameModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Создать игру</h2>
+            <h2>{{ _('create_game.title') }}</h2>
             <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
 
         <form id="createGameForm" autocomplete="off">
             <!-- Переключатель режима игры -->
             <div class="form-group">
-                <label class="switch-label">Игра на время
+                <label class="switch-label">{{ _('create_game.timed_game') }}
                     <input type="checkbox" id="useTimer" class="switch-input" checked=""
                            onchange="toggleTimerSettings()">
                     <span class="switch-slider"></span>
@@ -20,12 +20,12 @@
 
             <!-- Настройки времени (показываются только когда включен таймер) -->
             <div id="timerSettings" class="form-group timer-settings">
-                <label for="gameDuration">Длительность партии (минуты):
+                <label for="gameDuration">{{ _('create_game.duration') }}
                     <span class="gameDurationValue">3</span>
                 </label>
                 <input class="range" type="range" id="gameDuration" min="1" max="15" value="3" oninput="showVal(this)">
 
-                <label for="moveAddition">Добавление за ход (секунды):
+                <label for="moveAddition">{{ _('create_game.increment') }}
                     <span class="moveAdditionValue">5</span>
                 </label>
                 <input class="range" type="range" id="moveAddition" min="0" max="60" value="5" oninput="showVal(this)">
@@ -33,14 +33,14 @@
 
             <!-- Переключатель случайного начала игры -->
             <div class="form-group" style="display: none !important;">
-                <label class="switch-label">Случайная начальная расстановка
+                <label class="switch-label">{{ _('create_game.random_start') }}
                     <input type="checkbox" id="randomStart" class="switch-input">
                     <span class="switch-slider"></span>
                 </label>
             </div>
 
             <div class="form-group">
-                <label>Выберите сторону</label>
+                <label>{{ _('create_game.choose_side') }}</label>
                 <div class="radio-group">
                     <div class="radio-option">
                         <input type="radio" id="pieceX" name="piece" value="X">
@@ -48,7 +48,7 @@
                     </div>
                     <div class="radio-option">
                         <input type="radio" id="pieceRandom" name="piece" value="random" checked>
-                        <label for="pieceRandom">Случайно</label>
+                        <label for="pieceRandom">{{ _('create_game.random_side') }}</label>
                     </div>
                     <div class="radio-option">
                         <input type="radio" id="pieceO" name="piece" value="O">
@@ -58,8 +58,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn ghost" onclick="closeModal()">Отмена</button>
-                <button type="submit" class="btn primary">Создать игру</button>
+                <button type="button" class="btn ghost" onclick="closeModal()">{{ _('common.cancel') }}</button>
+                <button type="submit" class="btn primary">{{ _('create_game.title') }}</button>
             </div>
         </form>
     </div>

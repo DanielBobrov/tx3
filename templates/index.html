@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% from "components/macros.html" import render_player_button, game_card %}
-{% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в кресты-обручи онлайн{% endblock %}
+{% block title %}{{ _('common.site_title') }} — {{ _('common.site_tagline') }}{% endblock %}
 {% block content %}
   <link rel="stylesheet" href="/static/css/index.css">
 
     <section class="hero">
         <div class="hero-left">
-            <h1>Играть в кресты-обручи онлайн</h1>
+            <h1>{{ _('common.site_tagline') }}</h1>
             {#    <p class="muted">Мгновенные партии, режимы, рейтинги и наблюдение за матчами в реальном времени.</p>#}
             <div class="cta-row">
                 {#      <a href="/quickplay" class="btn primary">Играть с соперником</a>#}
@@ -28,15 +28,15 @@
     <section class="grid two">
         <div class="panel">
             <div class="panel-head">
-                <h3>Можно присоединиться</h3>
-                <a class="link" href="/all_games">Все игры</a>
+                <h3>{{ _('main_screen.can_join') }}</h3>
+                <a class="link" href="/all_games">{{ _('main_screen.all_games') }}</a>
             </div>
             <div class="games">
                 {% for game in last_games or [] %}
                     {{ game_card(game, players) }}
                 {% else %}
                     <div class="tr empty">
-                        <div class="muted">Нет игр в ожидании второго игрока. Создайте свою!</div>
+                        <div class="muted">{{ _('main_screen.no_waiting_games') }}</div>
                     </div>
                 {% endfor %}
             </div>
@@ -45,15 +45,15 @@
 
         <div class="panel">
             <div class="panel-head">
-                <h3>Мои игры</h3>
-                <a class="link" href="/all_games">Все игры</a>
+                <h3>{{ _('main_screen.my_games') }}</h3>
+                <a class="link" href="/all_games">{{ _('main_screen.all_games') }}</a>
             </div>
             <div class="games">
                 {% for game in player_games or [] %}
                     {{ game_card(game, players) }}
                 {% else %}
                     <div class="tr empty">
-                        <div class="muted">Нет последних игр. Создайте первую!</div>
+                        <div class="muted">{{ _('No games waiting for a second player. Create your own!') }}</div>
                     </div>
                 {% endfor %}
             </div>

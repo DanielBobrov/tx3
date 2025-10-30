@@ -50,40 +50,40 @@
         <aside class="side-col">
             <div class="panel moves">
                 <div class="panel-head">
-                    <h3>Анализ</h3>
-                    <div class="muted" id="gameStatus">Ход: X</div>
+                    <h3>{{ _('analysis_screen.title') }}</h3>
+                    <div class="muted" id="gameStatus">{{ _('game_state.current_move') }} X</div>
                 </div>
                 <div id="movesTree"></div>
                 <div class="navigation-controls"></div>
                 <div class="moves-nav">
                     <div></div>
-                    <button class="btn" id="copyPositionBtn" title="Скопировать PGN">
-                        Скопировать PGN
+                    <button class="btn" id="copyPositionBtn" title="{{ _('moves_history.copy_pgn') }}">
+                        {{ _('moves_history.copy_pgn') }}
                     </button>
                     <div class="nav-spacer"></div>
-                    <button id="navFirst" title="В начало">
+                    <button id="navFirst" title="{{ _('moves_history.to_first_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
                         </svg>
                     </button>
-                    <button id="navPrev" title="Предыдущий ход">
+                    <button id="navPrev" title="{{ _('moves_history.to_previous_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
                         </svg>
                     </button>
-                    <button id="navNext" title="Следующий ход">
+                    <button id="navNext" title="{{ _('moves_history.to_next_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
                         </svg>
                     </button>
-                    <button id="navLast" title="В конец">
+                    <button id="navLast" title="{{ _('moves_history.to_last_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
                         </svg>
                     </button>
                     <div></div>
-                    <button class="btn" id="pastePgnBtn" title="Вставить PGN из буфера">
-                        Вставить PGN
+                    <button class="btn" id="pastePgnBtn" title="{{ _('moves_history.paste_pgn') }}">
+                        {{ _('moves_history.paste_pgn') }}
                     </button>
                     <div></div>
                 </div>

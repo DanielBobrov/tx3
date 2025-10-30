@@ -1,0 +1,201 @@
+# Russian translations for tictactoe.
+# Copyright (C) 2025
+# This file is distributed under the same license as the tictactoe project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-29 12:00+0000\n"
+"PO-Revision-Date: 2025-10-29 12:00+0000\n"
+"Last-Translator: \n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Manual 1.0\n"
+
+# Основные
+msgid "common.site_title"
+msgstr "Кресты-обручи"
+
+msgid "common.site_tagline"
+msgstr "Играть в кресты-обручи онлайн"
+
+msgid "common.cancel"
+msgstr "Отмена"
+
+# Навбар
+msgid "navbar.login"
+msgstr "Войти"
+
+msgid "navbar.logout"
+msgstr "Выйти"
+
+msgid "navbar.signup"
+msgstr "Регистрация"
+
+# Главный экран (index.html)
+msgid "main_screen.can_join"
+msgstr "Можно присоединиться"
+
+msgid "main_screen.all_games"
+msgstr "Все игры"
+
+msgid "main_screen.no_waiting_games"
+msgstr "Нет игр в ожидании второго игрока. Создайте свою!"
+
+msgid "main_screen.my_games"
+msgstr "Мои игры"
+
+msgid "main_screen.no_active_games"
+msgstr "У вас пока нет активных игр"
+
+# Модальное окно создания игры (create_game.html)
+msgid "create_game.title"
+msgstr "Создать игру"
+
+msgid "create_game.timed_game"
+msgstr "Игра на время"
+
+msgid "create_game.duration"
+msgstr "Длительность партии (минуты):"
+
+msgid "create_game.increment"
+msgstr "Добавление за ход (секунды):"
+
+msgid "create_game.random_start"
+msgstr "Случайная начальная расстановка"
+
+msgid "create_game.choose_side"
+msgstr "Выберите сторону"
+
+msgid "create_game.random_side"
+msgstr "Случайно"
+
+# Экран анализа (analysis.html)
+msgid "analysis_screen.title"
+msgstr "Анализ"
+
+# Навигация по ходам (moves_history компонент)
+msgid "moves_history.copy_pgn"
+msgstr "Скопировать PGN"
+
+msgid "moves_history.to_first_move"
+msgstr "В начало"
+
+msgid "moves_history.to_previous_move"
+msgstr "Предыдущий ход"
+
+msgid "moves_history.to_next_move"
+msgstr "Следующий ход"
+
+msgid "moves_history.to_last_move"
+msgstr "В конец"
+
+msgid "moves_history.paste_pgn"
+msgstr "Вставить PGN из буфера"
+
+# Игровые состояния и сообщения
+msgid "game_state.won"
+msgstr "Победил"
+
+msgid "game_state.current_move"
+msgstr "Ход:"
+
+msgid "game_state.invalid_pgn"
+msgstr "Неверный формат PGN. Должна быть строка из цифр 0-8."
+
+msgid "game_state.error_at_move"
+msgstr "Ошибка на ходе"
+
+msgid "game_state.could_not_apply_move"
+msgstr "Не удалось применить ход"
+
+msgid "game_state.already_finished"
+msgstr "Игра уже завершена!"
+
+# Буфер обмена
+msgid "clipboard.empty"
+msgstr "Буфер обмена пуст"
+
+msgid "clipboard.access_denied"
+msgstr "Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ."
+
+# Уведомления
+msgid "notification.move_made"
+msgstr "сделал ход"
+
+# Экран входа/регистрации (login.html)
+msgid "auth.login"
+msgstr "Войти"
+
+msgid "auth.signup"
+msgstr "Регистрация"
+
+msgid "auth.username"
+msgstr "Имя пользователя"
+
+msgid "auth.password"
+msgstr "Пароль"
+
+msgid "auth.confirm_password"
+msgstr "Подтвердите пароль"
+
+msgid "auth.no_account"
+msgstr "Нет аккаунта?"
+
+msgid "auth.sign_up"
+msgstr "Зарегистрируйтесь"
+
+msgid "auth.have_account"
+msgstr "Уже есть аккаунт?"
+
+msgid "auth.log_in"
+msgstr "Войдите"
+
+# Экран всех игр (all_games.html)
+msgid "all_games_screen.title"
+msgstr "Все игры"
+
+msgid "all_games_screen.winner"
+msgstr "Победитель"
+
+msgid "all_games_screen.player_x"
+msgstr "Играл за X"
+
+msgid "all_games_screen.player_o"
+msgstr "Играл за O"
+
+msgid "all_games_screen.status"
+msgstr "Статус"
+
+# Экран активной игры (active_game.html)
+msgid "active_game_screen.game_number"
+msgstr "Партия"
+
+msgid "active_game_screen.moves"
+msgstr "Ходы"
+
+msgid "active_game_screen.analyze_position"
+msgstr "Анализировать позицию"
+
+msgid "active_game_screen.resign"
+msgstr "Сдаться"
+
+# Экран завершенной игры (ended_game.html)
+msgid "ended_game_screen.game_number"
+msgstr "Партия"
+
+msgid "ended_game_screen.moves"
+msgstr "Ходы"
+
+msgid "ended_game_screen.analyze_position"
+msgstr "Анализировать позицию"
+
+msgid "ended_game_screen.viewing_move"
+msgstr "Просмотр хода"
+

@@ -1,0 +1,20 @@
+{
+  "game": {
+    "already_finished": "Игра уже завершена!",
+    "invalid_pgn": "Неверный формат PGN. Должна быть строка из цифр 0-8.",
+    "error_on_move": "Ошибка на ходе {move}: {error}",
+    "failed_to_apply_move": "Не удалось применить ход {move}",
+    "failed_to_apply": "Не удалось применить ход",
+    "won": "Победил {winner}!",
+    "turn": "Ход: {mark}",
+    "clipboard_empty": "Буфер обмена пуст",
+    "clipboard_error": "Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ."
+  },
+  "notifications": {
+    "title": "Кресты-обручи",
+    "move_made": "{username} сделал ход"
+  },
+  "common": {
+    "anonymous": "Аноним"
+  }
+}
