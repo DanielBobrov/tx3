@@ -188,6 +188,7 @@ main {
     /*border: 1px solid #fff;*/
     box-shadow: 0 0 20px #ffffff0f;
     background: #ffffff04;
+    transform: scale(1.03);
 }
 
 .players {
