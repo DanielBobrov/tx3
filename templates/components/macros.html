@@ -10,7 +10,7 @@
 {% macro game_card(game, players) -%}
     {% from "components/board.html" import render_board %}
     <div class="btn ghost game" style="cursor:default;">
-        <a href="/game/{{ game.id }}" class="">
+        <a href="/invite/{{ game.id }}" class="">
             {{ render_board('Board-{{game.id}}', game.fen) }}
         </a>
         <div class="players">

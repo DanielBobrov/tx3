@@ -364,6 +364,8 @@ def home():
 @validator({})
 @auth_player
 def on_invite(game_id: int):
+    if session.get("player_id") in games[game_id].players:
+        return redirect(f"/game/{game_id}")
     return render_template("invite.html", game=games[game_id], player=players[session.get("player_id")])
 
 
@@ -371,7 +373,6 @@ def on_invite(game_id: int):
 @validator({})
 @auth_player
 def on_analysis():
-    print(f"{request.args = }")
     game_id = request.args.get('game_id', type=int)
     game = None
     
