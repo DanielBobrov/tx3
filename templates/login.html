@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Вход / Регистрация - {{ super() }}{% endblock %}
+{% block title %}{{ _('auth.login') }} / {{ _('auth.signup') }} - {{ super() }}{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -155,8 +155,8 @@
 {% block content %}
 <div class="auth-container">
   <div class="auth-tabs">
-    <div class="tab active" data-tab="login">Вход</div>
-    <div class="tab" data-tab="register">Регистрация</div>
+    <div class="tab active" data-tab="login">{{ _('auth.login') }}</div>
+    <div class="tab" data-tab="register">{{ _('auth.signup') }}</div>
   </div>
   
   <div class="auth-form">
@@ -166,7 +166,7 @@
     <!-- Форма входа -->
     <form id="loginForm" class="auth-form-content">
       <div class="form-group">
-        <label class="form-label" for="loginUsername">Имя пользователя</label>
+        <label class="form-label" for="loginUsername">{{ _('auth.username') }}</label>
         <input 
           type="text" 
           id="loginUsername" 
@@ -178,7 +178,7 @@
       </div>
       
       <div class="form-group">
-        <label class="form-label" for="loginPassword">Пароль</label>
+        <label class="form-label" for="loginPassword">{{ _('auth.password') }}</label>
         <input 
           type="password" 
           id="loginPassword" 
@@ -192,19 +192,19 @@
       <div id="loginError" class="error-message"></div>
       
       <button type="submit" class="btn primary form-submit">
-        <span>Войти</span>
+        <span>{{ _('auth.login') }}</span>
         <span class="loading spinner"></span>
       </button>
       
       <div class="form-footer">
-        Нет аккаунта? <a href="#" onclick="switchTab('register'); return false;">Зарегистрируйтесь</a>
+        {{ _("auth.no_account") }} <a href="#" onclick="switchTab('register'); return false;">{{ _('auth.sign_up') }}</a>
       </div>
     </form>
     
     <!-- Форма регистрации -->
     <form id="registerForm" class="auth-form-content" style="display: none;">
       <div class="form-group">
-        <label class="form-label" for="registerUsername">Имя пользователя</label>
+        <label class="form-label" for="registerUsername">{{ _('auth.username') }}</label>
         <input 
           type="text" 
           id="registerUsername" 
@@ -218,7 +218,7 @@
       </div>
       
       <div class="form-group">
-        <label class="form-label" for="registerPassword">Пароль</label>
+        <label class="form-label" for="registerPassword">{{ _('auth.password') }}</label>
         <input 
           type="password" 
           id="registerPassword" 
@@ -231,7 +231,7 @@
       </div>
       
       <div class="form-group">
-        <label class="form-label" for="registerPasswordConfirm">Подтвердите пароль</label>
+        <label class="form-label" for="registerPasswordConfirm">{{ _('auth.confirm_password') }}</label>
         <input 
           type="password" 
           id="registerPasswordConfirm" 
@@ -245,12 +245,12 @@
       <div id="registerError" class="error-message"></div>
       
       <button type="submit" class="btn primary form-submit">
-        <span>Зарегистрироваться</span>
+        <span>{{ _('auth.signup') }}</span>
         <span class="loading spinner"></span>
       </button>
       
       <div class="form-footer">
-        Уже есть аккаунт? <a href="#" onclick="switchTab('login'); return false;">Войдите</a>
+        {{ _("auth.have_account") }} <a href="#" onclick="switchTab('login'); return false;">{{ _('auth.log_in') }}</a>
       </div>
     </form>
   </div>
@@ -346,7 +346,7 @@
       
       if (response.ok) {
         // Успешный вход
-        window.location.href = data.redirect || '/';
+        window.location.replace(data.redirect || '/');
       } else {
         // Ошибка входа
         if (data.error === 'invalid_credentials') {

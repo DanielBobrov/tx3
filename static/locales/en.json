@@ -1,0 +1,40 @@
+{
+  "game": {
+    "already_finished": "Game is already finished!",
+    "won": "{winner} won!",
+    "move": "Turn: {mark}"
+  },
+  "pgn": {
+    "invalid_format": "Invalid PGN format. Must be a string of digits 0-8.",
+    "error_at_move": "Error on move {move}: {error}",
+    "could_not_apply": "Failed to apply move {move}",
+    "invalid_cell": "Invalid cell number (0-8)",
+    "invalid_fen": "Invalid FEN format",
+    "cell_occupied": "Cell is already occupied",
+    "invalid_char": "Invalid character in PGN"
+  },
+  "clipboard": {
+    "empty": "Clipboard is empty",
+    "access_denied": "Failed to read clipboard. Make sure you granted permission."
+  },
+  "notification": {
+    "made_move": "made a move",
+    "title": "Tic-Tac-Toe"
+  },
+  "nav": {
+    "first": "First",
+    "previous": "Previous move",
+    "next": "Next move",
+    "last": "Last"
+  },
+  "common": {
+    "anonymous": "Anonymous"
+  },
+  "create_game": {
+    "error": "Error creating game",
+    "error_occurred": "An error occurred while creating the game"
+  },
+  "waiting_room": {
+    "opponent_found": "Opponent found! Loading game..."
+  }
+}

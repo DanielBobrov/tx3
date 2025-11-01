@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const statusElement = document.getElementById('waitingStatus');
             if (statusElement) {
-                statusElement.textContent = 'Противник найден! Загружаем игру...';
+                statusElement.textContent = window.i18n.t('waiting_room.opponent_found');
             }
 
             setTimeout(() => {

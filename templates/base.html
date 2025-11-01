@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="{{ current_locale|default('ru') }}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}{{ site_name|default('Кресты-обручи') }}{% endblock %}</title>
+  <title>{% block title %}{{ _('common.site_title') }}{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/main.css">
   {% block head_extra %}{% endblock %}
 </head>
@@ -14,11 +14,16 @@
   </main>
   <footer class="footer">
     <div class="container footer-inner">
-      <div>© {{ current_year|default(2025) }} {{ site_name|default('Кресты-обручи') }}</div>
+      <div>© {{ current_year|default(2025) }} {{ _('common.site_title') }}</div>
 {#      <div class="muted">UI вдохновлён онлайн‑шахматами. Без логотипов/бренда.</div>#}
     </div>
   </footer>
 
+  <script>
+    // Передаем текущий язык в JavaScript
+    window.LOCALE = "{{ current_locale|default('ru') }}";
+  </script>
+  <script src="/static/js/i18n.js"></script>
   <script src="/static/js/main.js"></script>
   {% block scripts %}{% endblock %}
 </body>

@@ -1,6 +1,6 @@
 <header class="navbar">
   <div class="container nav-inner">
-    <a href="/" class="logo">{{ site_name|default('Кресты-обручи') }}</a>
+    <a href="/" class="logo">{{ _('common.site_title') }}</a>
     <nav class="nav-links">
 {#      <a href="/">Играть</a>#}
 {#      <a href="#">Задачи</a>#}
@@ -10,13 +10,28 @@
     </nav>
     <div class="nav-actions">
 {#      <input type="search" class="search" placeholder="Поиск игрока или партии" />#}
+      
+      {# Language Switcher #}
+      <div class="language-dropdown">
+        <button class="btn small ghost language-btn">
+          {{ current_locale.upper() }}
+          <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M6 9L1 4h10z"/>
+          </svg>
+        </button>
+        <div class="language-menu">
+          <a href="/set_language/ru" class="language-option {% if current_locale == 'ru' %}active{% endif %}">🇷🇺 Русский</a>
+          <a href="/set_language/en" class="language-option {% if current_locale == 'en' %}active{% endif %}">🇬🇧 English</a>
+        </div>
+      </div>
+
       {% if player and player.username != None %}
 {#        <a href="/profile" class="btn small">Профиль</a>#}
           <p>{{ player.username }}</p>
-        <a href="/logout" class="btn small ghost">Выйти</a>
+        <a href="/logout" class="btn small ghost">{{ _('navbar.logout') }}</a>
       {% else %}
-        <a href="/login" class="btn small">Войти</a>
-        <a href="/signup" class="btn small ghost">Регистрация</a>
+        <a href="/login" class="btn small">{{ _('navbar.login') }}</a>
+        <a href="/signup" class="btn small ghost">{{ _('navbar.signup') }}</a>
       {% endif %}
     </div>
   </div>

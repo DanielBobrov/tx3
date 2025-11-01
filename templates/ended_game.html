@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/board.html" import render_board %}
 {% from "components/macros.html" import render_player_username %}
-{% block title %}Партия {{ game.id if game else '' }} — {{ site_name|default('Кресты-обручи') }}{% endblock %}
+{% block title %}{{ _('ended_game_screen.game_number') }} {{ game.id if game else '' }} — {{ _('common.site_title') }}{% endblock %}
 
 {% block content %}
     <link rel="stylesheet" href="/static/css/game.css">
@@ -47,7 +47,7 @@
         <aside class="side-col">
             <div class="panel moves">
                 <div class="panel-head">
-                    <h3>Ходы</h3>
+                    <h3>{{ _('ended_game_screen.moves') }}</h3>
                     <div class="muted" id="gameStatus">{{ game.status if game else 'Идёт' }}</div>
                 </div>
                 <div class="moves-list" id="movesList"></div>
@@ -56,34 +56,34 @@
                     <button class="btn"
                             id="copyPositionBtn"
 {#                            onclick="{if (window.INIT.fen) {navigator.clipboard.writeText(window.INIT.fen);}}"#}
-                    >Скопировать игру
+                    >{{ _('moves_history.copy_pgn') }}
                     </button>
                     <div></div>
-                    <button id="navFirst" title="В начало">
+                    <button id="navFirst" title="{{ _('moves_history.to_first_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"></path>
                         </svg>
                     </button>
-                    <button id="navPrev" title="Предыдущий ход">
+                    <button id="navPrev" title="{{ _('moves_history.to_previous_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
                         </svg>
                     </button>
-                    <button id="navNext" title="Следующий ход">
+                    <button id="navNext" title="{{ _('moves_history.to_next_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path>
                         </svg>
                     </button>
-                    <button id="navLast" title="В конец">
+                    <button id="navLast" title="{{ _('moves_history.to_last_move') }}">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"></path>
                         </svg>
                     </button>
                     <div></div>
-                    <button class="btn" onclick="window.location.href = '/analysis?game_id={{ game.id if game else 0 }}'">Анализировать позицию</button>
+                    <button class="btn" onclick="window.location.href = '/analysis?game_id={{ game.id if game else 0 }}'">{{ _('ended_game_screen.analyze_position') }}</button>
                 </div>
                 <div class="viewing-indicator" id="viewingIndicator">
-                    Просмотр хода <span id="viewingMoveNum"></span>
+                    {{ _('ended_game_screen.viewing_move') }} <span id="viewingMoveNum"></span>
                 </div>
             </div>
         </aside>

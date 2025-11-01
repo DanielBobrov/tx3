@@ -4,8 +4,9 @@ from functools import wraps
 
 import dotenv
 import flask
-from flask import session, redirect, render_template, request
+from flask import session, redirect, render_template, request, g
 from flask_socketio import SocketIO, join_room, emit
+from flask_babel import Babel, gettext, lazy_gettext as _l
 
 from database import *
 from utils import *
@@ -15,6 +16,43 @@ app = flask.Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 app.config["SESSION_VERSION"] = datetime.datetime.now().timestamp()
 app.permanent_session_lifetime = datetime.timedelta(days=30)
+
+# Babel configuration
+app.config['BABEL_DEFAULT_LOCALE'] = 'ru'
+app.config['BABEL_SUPPORTED_LOCALES'] = ['ru', 'en']
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+
+babel = Babel(app)
+
+
+def get_locale():
+    """Определяет текущий язык пользователя"""
+    # 1. Проверяем явный выбор из URL параметра
+    if 'lang' in request.args:
+        lang = request.args.get('lang')
+        if lang in app.config['BABEL_SUPPORTED_LOCALES']:
+            session['language'] = lang
+            return lang
+    
+    # 2. Проверяем сохраненный язык в сессии
+    if 'language' in session:
+        return session.get('language')
+    
+    # 3. Пытаемся определить язык из заголовков браузера
+    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
+
+
+babel.init_app(app, locale_selector=get_locale)
+
+
+# Добавляем текущий язык в контекст всех шаблонов
+@app.context_processor
+def inject_locale():
+    return {
+        'current_locale': get_locale(),
+        'available_locales': app.config['BABEL_SUPPORTED_LOCALES']
+    }
+
 
 # async_mode="eventlet" важен для работы в асинхронном режиме
 socketio = SocketIO(app, ping_timeout=1, ping_interval=1, async_mode="eventlet", cors_allowed_origins="*",
@@ -359,7 +397,15 @@ def on_all_games_fn():
 @auth_player
 def on_get_logout_fn():
     session["player_id"] = None
-    return redirect("/")
+    return redirect(request.referrer or '/')
+
+
+@app.route("/set_language/<language>")
+def set_language(language):
+    """Устанавливает язык интерфейса"""
+    if language in app.config['BABEL_SUPPORTED_LOCALES']:
+        session['language'] = language
+    return redirect(request.referrer or '/')
 
 
 @app.route("/login", methods=["GET"])

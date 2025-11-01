@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from "components/macros.html" import render_player_button %}
-{% block title %}{{ site_name|default('Кресты-обручи') }} — Играть в крестики-нолики онлайн{% endblock %}
+{% block title %}{{ _('common.site_title') }} — {{ _('common.site_tagline') }}{% endblock %}
 {% block content %}
     <section class="hero">
         <div class="hero-left">
-            <h1>Играть в крестики-нолики онлайн — бесплатно</h1>
+            <h1>{{ _('common.site_tagline') }}</h1>
         </div>
 
     </section>
@@ -12,14 +12,14 @@
     <section class="grid">
         <div class="panel">
             <div class="panel-head">
-                <h3>Последние игры</h3>
+                <h3>{{ _('all_games_screen.title') }}</h3>
             </div>
             <div class="table">
                 <div class="tr th">
-                    <div>Победитель</div>
-                    <div>Играл за X</div>
-                    <div>Играл за O</div>
-                    <div>Статус</div>
+                    <div>{{ _('all_games_screen.winner') }}</div>
+                    <div>{{ _('all_games_screen.player_x') }}</div>
+                    <div>{{ _('all_games_screen.player_o') }}</div>
+                    <div>{{ _('all_games_screen.status') }}</div>
                     <div></div>
                 </div>
                 {% for game in last_games or [] %}

@@ -58,12 +58,12 @@ class GameLogic {
      */
     isValidMove(fen, move, activeMini) {
         if (move < 0 || move > 8) {
-            return { valid: false, error: 'Неверный номер клетки (0-8)' };
+            return { valid: false, error: window.i18n.t('pgn.invalid_cell') };
         }
 
         const state = this.parseFen(fen);
         if (!state) {
-            return { valid: false, error: 'Неверный формат FEN' };
+            return { valid: false, error: window.i18n.t('pgn.invalid_fen') };
         }
 
         // Проверяем, что ходим в правильную минидоску
@@ -81,7 +81,7 @@ class GameLogic {
 
         // Проверяем, что клетка пустая
         if (state.grid[globalRow][globalCol] !== null) {
-            return { valid: false, error: 'Клетка уже занята' };
+            return { valid: false, error: window.i18n.t('pgn.cell_occupied') };
         }
 
         return { valid: true };
@@ -288,7 +288,7 @@ class AnalysisManager {
      */
     buildTreeFromPgn(pgn, startFen = null) {
         if (!this.validatePgn(pgn)) {
-            alert('Неверный формат PGN. Должна быть строка из цифр 0-8.');
+            alert(window.i18n.t('pgn.invalid_format'));
             return false;
         }
 
@@ -308,14 +308,14 @@ class AnalysisManager {
             // Валидация хода
             const validation = this.logic.isValidMove(currentNode.fen, move, state.activeMini);
             if (!validation.valid) {
-                alert(`Ошибка на ходе ${i + 1}: ${validation.error}`);
+                alert(window.i18n.t('pgn.error_at_move', { move: i + 1, error: validation.error }));
                 return false;
             }
 
             // Применяем ход
             const result = this.logic.applyMove(currentNode.fen, move);
             if (!result) {
-                alert(`Не удалось применить ход ${i + 1}`);
+                alert(window.i18n.t('pgn.could_not_apply', { move: i + 1 }));
                 return false;
             }
 
@@ -357,7 +357,7 @@ class AnalysisManager {
     addMove(move) {
         // Проверяем, завершена ли игра в текущем узле
         if (this.currentNode.winner) {
-            alert('Игра уже завершена!');
+            alert(window.i18n.t('game.already_finished'));
             return false;
         }
 
@@ -379,7 +379,7 @@ class AnalysisManager {
             const result = this.logic.applyMove(this.currentNode.fen, move);
             
             if (!result) {
-                alert('Не удалось применить ход');
+                alert(window.i18n.t('pgn.could_not_apply', { move: '' }));
                 return false;
             }
 
@@ -503,11 +503,11 @@ class AnalysisManager {
         if (!statusEl) return;
 
         if (this.currentNode.winner) {
-            statusEl.textContent = `Победил ${this.currentNode.winner}!`;
+            statusEl.textContent = window.i18n.t('game.won', { winner: this.currentNode.winner });
         } else {
             const state = this.logic.parseFen(this.currentNode.fen);
             const nextMark = state.step === 0 ? 'X' : 'O';
-            statusEl.textContent = `Ход: ${nextMark}`;
+            statusEl.textContent = window.i18n.t('game.move', { mark: nextMark });
         }
     }
 
@@ -704,14 +704,14 @@ class AnalysisManager {
             const pgn = text.trim();
             
             if (pgn.length === 0) {
-                alert('Буфер обмена пуст');
+                alert(window.i18n.t('clipboard.empty'));
                 return;
             }
 
             this.buildTreeFromPgn(pgn);
         } catch (err) {
             console.error('Ошибка чтения буфера обмена:', err);
-            alert('Не удалось прочитать буфер обмена. Убедитесь что разрешили доступ.');
+            alert(window.i18n.t('clipboard.access_denied'));
         }
     }
 
