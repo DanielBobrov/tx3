@@ -69,11 +69,11 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
             window.location.href = `/game/${data.game_id}`;
         } else {
             const error = await response.json();
-            alert(error.message || 'Ошибка при создании игры');
+            alert(error.message || window.i18n.t('create_game.error'));
         }
     } catch (error) {
         console.error('Ошибка:', error);
-        alert('Произошла ошибка при создании игры');
+        alert(window.i18n.t('create_game.error_occurred'));
     }
 });
 

@@ -7,7 +7,11 @@
   "pgn": {
     "invalid_format": "Invalid PGN format. Must be a string of digits 0-8.",
     "error_at_move": "Error on move {move}: {error}",
-    "could_not_apply": "Failed to apply move {move}"
+    "could_not_apply": "Failed to apply move {move}",
+    "invalid_cell": "Invalid cell number (0-8)",
+    "invalid_fen": "Invalid FEN format",
+    "cell_occupied": "Cell is already occupied",
+    "invalid_char": "Invalid character in PGN"
   },
   "clipboard": {
     "empty": "Clipboard is empty",
@@ -25,5 +29,12 @@
   },
   "common": {
     "anonymous": "Anonymous"
+  },
+  "create_game": {
+    "error": "Error creating game",
+    "error_occurred": "An error occurred while creating the game"
+  },
+  "waiting_room": {
+    "opponent_found": "Opponent found! Loading game..."
   }
 }

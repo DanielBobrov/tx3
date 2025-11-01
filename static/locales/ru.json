@@ -7,7 +7,11 @@
   "pgn": {
     "invalid_format": "Неверный формат PGN. Должна быть строка из цифр 0-8.",
     "error_at_move": "Ошибка на ходе {move}: {error}",
-    "could_not_apply": "Не удалось применить ход {move}"
+    "could_not_apply": "Не удалось применить ход {move}",
+    "invalid_cell": "Неверный номер клетки (0-8)",
+    "invalid_fen": "Неверный формат FEN",
+    "cell_occupied": "Клетка уже занята",
+    "invalid_char": "Недопустимый символ в PGN"
   },
   "clipboard": {
     "empty": "Буфер обмена пуст",
@@ -25,5 +29,12 @@
   },
   "common": {
     "anonymous": "Аноним"
+  },
+  "create_game": {
+    "error": "Ошибка при создании игры",
+    "error_occurred": "Произошла ошибка при создании игры"
+  },
+  "waiting_room": {
+    "opponent_found": "Противник найден! Загружаем игру..."
   }
 }
